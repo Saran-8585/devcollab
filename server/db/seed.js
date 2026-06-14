@@ -1,622 +1,222 @@
+import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
-import { initDatabase } from './database.js';
+import User from '../models/User.js';
+import Project from '../models/Project.js';
+import ProjectCollaborator from '../models/ProjectCollaborator.js';
+import Task from '../models/Task.js';
+import Snippet from '../models/Snippet.js';
+import PullRequest from '../models/PullRequest.js';
+import PRComment from '../models/PRComment.js';
+import Discussion from '../models/Discussion.js';
+import DiscussionReply from '../models/DiscussionReply.js';
+import Follow from '../models/Follow.js';
+import SnippetLike from '../models/SnippetLike.js';
+import ActivityLog from '../models/ActivityLog.js';
+import Flag from '../models/Flag.js';
 
-const db = initDatabase();
-
-function clearData() {
-  const tables = [
-    'flags', 'activity_log', 'snippet_likes', 'follows', 'discussion_replies',
-    'discussions', 'pr_comments', 'pull_requests', 'snippets',
-    'tasks', 'project_collaborators', 'projects', 'users'
-  ];
-  for (const t of tables) {
-    db.exec(`DELETE FROM ${t}`);
-  }
-}
-
-const now = new Date();
-function daysAgo(n) {
-  const d = new Date(now);
-  d.setDate(d.getDate() - n);
-  return d.toISOString().replace('T', ' ').split('.')[0];
-}
-function hoursAgo(n) {
-  const d = new Date(now);
-  d.setHours(d.getHours() - n);
-  return d.toISOString().replace('T', ' ').split('.')[0];
-}
-
-const languages = ['JavaScript', 'TypeScript', 'Python', 'Go', 'Rust', 'Java', 'C++', 'Ruby', 'PHP', 'Swift', 'Kotlin', 'SQL', 'CSS', 'HTML', 'Shell', 'Lua', 'R', 'Dart', 'Scala', 'Elixir'];
-
-const devs = [
-  { name: 'Kiran Patel', email: 'dev1@devcollab.com', username: 'devkiran', bio: 'Full-stack developer passionate about React and Node.js', primary_language: 'TypeScript', skills: ['React', 'Node.js', 'TypeScript', 'PostgreSQL'] },
-  { name: 'Priya Sharma', email: 'dev2@devcollab.com', username: 'codepriya', bio: 'Pythonista and AI enthusiast', primary_language: 'Python', skills: ['Python', 'Machine Learning', 'Django', 'FastAPI'] },
-  { name: 'Arjun Singh', email: 'dev3@devcollab.com', username: 'nullpointer', bio: 'Java veteran, Spring Boot expert', primary_language: 'Java', skills: ['Java', 'Spring Boot', 'Kafka', 'Docker'] },
-  { name: 'Meera Joshi', email: 'dev4@devcollab.com', username: 'meeracodes', bio: 'Frontend wizard, UI/UX enthusiast', primary_language: 'TypeScript', skills: ['React', 'Vue.js', 'Tailwind CSS', 'Figma'] },
-  { name: 'Rahul Verma', email: 'dev5@devcollab.com', username: 'rahuldev', bio: 'Go developer building scalable microservices', primary_language: 'Go', skills: ['Go', 'gRPC', 'Kubernetes', 'AWS'] },
-  { name: 'Ananya Reddy', email: 'dev6@devcollab.com', username: 'ananyareddy', bio: 'Rustacean and systems programmer', primary_language: 'Rust', skills: ['Rust', 'Systems Programming', 'WebAssembly', 'Embedded'] },
-  { name: 'Vikram Malhotra', email: 'dev7@devcollab.com', username: 'vikramdev', bio: 'Mobile developer - Flutter & Kotlin', primary_language: 'Dart', skills: ['Flutter', 'Kotlin', 'Firebase', 'Dart'] },
-  { name: 'Divya Nair', email: 'dev8@devcollab.com', username: 'divyaintech', bio: 'DevOps engineer, CI/CD pipelines', primary_language: 'Python', skills: ['Python', 'Docker', 'Terraform', 'Jenkins'] },
-  { name: 'Siddharth Rao', email: 'dev9@devcollab.com', username: 'sidcodes', bio: 'Backend developer, API design specialist', primary_language: 'JavaScript', skills: ['Node.js', 'Express', 'MongoDB', 'Redis'] },
-  { name: 'Kavya Iyer', email: 'dev10@devcollab.com', username: 'kavyaiyer', bio: 'Data engineer, big data pipelines', primary_language: 'Python', skills: ['Python', 'Spark', 'SQL', 'Airflow'] },
-  { name: 'Rohit Gupta', email: 'dev11@devcollab.com', username: 'rohitg', bio: 'Full-stack JS/TS developer', primary_language: 'TypeScript', skills: ['React', 'Next.js', 'Prisma', 'TypeScript'] },
-  { name: 'Neha Kapoor', email: 'dev12@devcollab.com', username: 'nehakapoor', bio: 'Security researcher and ethical hacker', primary_language: 'Python', skills: ['Python', 'Security', 'Penetration Testing', 'Bash'] },
-  { name: 'Amit Thakur', email: 'dev13@devcollab.com', username: 'amitthakur', bio: 'Cloud architect, AWS certified', primary_language: 'Go', skills: ['Go', 'AWS', 'Terraform', 'Cloud Architecture'] },
-  { name: 'Pooja Deshmukh', email: 'dev14@devcollab.com', username: 'poojadeshmukh', bio: 'ML engineer, NLP specialist', primary_language: 'Python', skills: ['Python', 'NLP', 'Transformers', 'PyTorch'] },
-  { name: 'Manish Agarwal', email: 'dev15@devcollab.com', username: 'manisha_dev', bio: 'Open source contributor, Rust enthusiast', primary_language: 'Rust', skills: ['Rust', 'TypeScript', 'CLI Tools', 'WebAssembly'] },
-];
-
-const projects = [
-  { name: 'ReactFlow Dashboard', description: 'A drag-and-drop dashboard builder built with React Flow and TypeScript. Supports custom widgets, real-time data binding, and responsive layouts.', primary_language: 'TypeScript', visibility: 'public', tags: ['react', 'dashboard', 'drag-drop', 'visualization'] },
-  { name: 'PyTorch Image Classifier', description: 'Deep learning image classification toolkit with pre-trained models and transfer learning support.', primary_language: 'Python', visibility: 'public', tags: ['deep-learning', 'computer-vision', 'pytorch'] },
-  { name: 'Go Microservice Framework', description: 'Lightweight microservice framework for Go with built-in service discovery, circuit breakers, and tracing.', primary_language: 'Go', visibility: 'public', tags: ['microservices', 'go', 'framework'] },
-  { name: 'Rust CLI Password Manager', description: 'Terminal-based password manager with encryption, auto-fill scripts, and browser extension integration.', primary_language: 'Rust', visibility: 'public', tags: ['cli', 'security', 'password-manager'] },
-  { name: 'Spring Boot E-Commerce API', description: 'Production-ready e-commerce backend with payment integration, inventory management, and order processing.', primary_language: 'Java', visibility: 'public', tags: ['e-commerce', 'spring-boot', 'api'] },
-  { name: 'Flutter Fitness Tracker', description: 'Cross-platform fitness tracking app with workout plans, progress charts, and social features.', primary_language: 'Dart', visibility: 'public', tags: ['flutter', 'fitness', 'mobile'] },
-  { name: 'Vue.js Component Library', description: 'A comprehensive Vue 3 component library with dark mode, accessibility, and tree-shaking support.', primary_language: 'TypeScript', visibility: 'public', tags: ['vue', 'components', 'ui-library'] },
-  { name: 'Express API Boilerplate', description: 'Production-ready Express.js API with authentication, rate limiting, logging, and testing setup.', primary_language: 'JavaScript', visibility: 'public', tags: ['express', 'boilerplate', 'nodejs'] },
-  { name: 'SQL Query Optimizer', description: 'Tool that analyzes SQL queries and suggests indexes, rewrites, and performance improvements.', primary_language: 'SQL', visibility: 'private', tags: ['sql', 'optimization', 'database'] },
-  { name: 'Kubernetes Deployment Manager', description: 'Web UI for managing Kubernetes deployments with rolling updates, rollbacks, and monitoring.', primary_language: 'Go', visibility: 'private', tags: ['kubernetes', 'devops', 'deployment'] },
-  { name: 'Rust Web Server', description: 'High-performance HTTP server built in Rust with async I/O and WebSocket support.', primary_language: 'Rust', visibility: 'public', tags: ['rust', 'http', 'async', 'websocket'] },
-  { name: 'Python Data Pipeline', description: 'ETL framework for building data pipelines with built-in connectors for major data sources.', primary_language: 'Python', visibility: 'private', tags: ['etl', 'data-pipeline', 'python'] },
-  { name: 'React Native Chat App', description: 'Real-time messaging app with end-to-end encryption and file sharing capabilities.', primary_language: 'TypeScript', visibility: 'public', tags: ['react-native', 'chat', 'messaging'] },
-  { name: 'Sass Mixin Library', description: 'Collection of useful Sass mixins and functions for faster CSS development.', primary_language: 'CSS', visibility: 'public', tags: ['sass', 'css', 'mixins'] },
-  { name: 'Terraform AWS Modules', description: 'Reusable Terraform modules for common AWS infrastructure patterns.', primary_language: 'Shell', visibility: 'public', tags: ['terraform', 'aws', 'infrastructure'] },
-  { name: 'Ruby on Rails Blog Engine', description: 'Feature-rich blogging engine with markdown support, SEO optimization, and analytics.', primary_language: 'Ruby', visibility: 'private', tags: ['rails', 'blog', 'cms'] },
-  { name: 'PHP Laravel CRM', description: 'Customer relationship management system built with Laravel and Livewire.', primary_language: 'PHP', visibility: 'private', tags: ['laravel', 'crm', 'php'] },
-  { name: 'Swift iOS Calculator', description: 'Advanced calculator app with graphing capabilities and unit conversions.', primary_language: 'Swift', visibility: 'public', tags: ['ios', 'calculator', 'swift'] },
-  { name: 'Kotlin Android Weather App', description: 'Beautiful weather app with animated backgrounds, widgets, and location-based forecasts.', primary_language: 'Kotlin', visibility: 'public', tags: ['android', 'weather', 'kotlin'] },
-  { name: 'Scala Data Analytics Library', description: 'Functional data analytics library for Scala with DataFrame API and visualization support.', primary_language: 'Scala', visibility: 'private', tags: ['scala', 'data-analytics', 'functional'] },
-];
-
-const taskTitles = [
-  'Implement user authentication', 'Add password reset flow', 'Create landing page', 'Build search component',
-  'Write API documentation', 'Add pagination support', 'Implement dark mode toggle', 'Set up CI/CD pipeline',
-  'Add unit tests for auth module', 'Create database migration script', 'Optimize image loading', 'Add rate limiting',
-  'Implement WebSocket connection', 'Add export to CSV feature', 'Create notification system', 'Build admin dashboard',
-  'Add file upload support', 'Implement caching layer', 'Create error boundary component', 'Add input validation',
-  'Fix login redirect bug', 'Update dependencies', 'Add loading skeletons', 'Create type definitions',
-  'Implement search debounce', 'Add accessibility labels', 'Create responsive grid layout', 'Build settings page',
-  'Add data persistence layer', 'Create onboarding flow', 'Implement two-factor auth', 'Add webhook support',
-  'Build activity feed', 'Add real-time notifications', 'Create data export API', 'Implement role-based access',
-  'Add email template system', 'Build analytics dashboard', 'Create subscription management', 'Add payment gateway',
-  'Implement search filters', 'Add bulk operations', 'Create audit log system', 'Build reporting module',
-  'Add API versioning', 'Implement feature flags', 'Create A/B testing framework', 'Add localization support',
-  'Build landing page SEO', 'Add social login providers', 'Implement queue system', 'Create backup scheduler',
-  'Add content moderation', 'Build recommendation engine', 'Implement data sync', 'Add offline support',
-  'Create widget system', 'Build plugin architecture', 'Add custom theme support', 'Implement data migration tool',
-];
-
-const snippetContents = {
-  JavaScript: `// Debounce utility function
-function debounce(func, wait, immediate) {
-  let timeout;
-  return function executedFunction() {
-    const context = this;
-    const args = arguments;
-    const later = function() {
-      timeout = null;
-      if (!immediate) func.apply(context, args);
-    };
-    const callNow = immediate && !timeout;
-    clearTimeout(timeout);
-    timeout = setTimeout(later, wait);
-    if (callNow) func.apply(context, args);
-  };
-}
-
-export default debounce;`,
-
-  TypeScript: `// Generic API response wrapper
-interface ApiResponse<T> {
-  data: T;
-  message: string;
-  status: number;
-  timestamp: string;
-}
-
-class ApiClient {
-  private baseUrl: string;
-  private token: string;
-
-  constructor(baseUrl: string, token: string) {
-    this.baseUrl = baseUrl;
-    this.token = token;
-  }
-
-  async get<T>(endpoint: string): Promise<ApiResponse<T>> {
-    const response = await fetch(\`\${this.baseUrl}\${endpoint}\`, {
-      headers: {
-        'Authorization': \`Bearer \${this.token}\`,
-        'Content-Type': 'application/json',
-      },
-    });
-    return response.json();
-  }
-}`,
-
-  Python: `# Quick sort implementation
-def quicksort(arr):
-    if len(arr) <= 1:
-        return arr
-    pivot = arr[len(arr) // 2]
-    left = [x for x in arr if x < pivot]
-    middle = [x for x in arr if x == pivot]
-    right = [x for x in arr if x > pivot]
-    return quicksort(left) + middle + quicksort(right)
-
-# Example usage
-data = [3, 6, 8, 10, 1, 2, 1]
-sorted_data = quicksort(data)
-print(f"Original: {data}")
-print(f"Sorted: {sorted_data}")`,
-
-  Go: `// HTTP server with middleware
-package main
-
-import (
-    "fmt"
-    "log"
-    "net/http"
-    "time"
-)
-
-func loggingMiddleware(next http.Handler) http.Handler {
-    return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-        start := time.Now()
-        next.ServeHTTP(w, r)
-        log.Printf("%s %s %v", r.Method, r.URL.Path, time.Since(start))
-    })
-}
-
-func helloHandler(w http.ResponseWriter, r *http.Request) {
-    fmt.Fprintf(w, "Hello, DevCollab!")
-}
-
-func main() {
-    mux := http.NewServeMux()
-    mux.HandleFunc("/", helloHandler)
-    handler := loggingMiddleware(mux)
-    log.Fatal(http.ListenAndServe(":8080", handler))
-}`,
-
-  Rust: `// Simple web server in Rust
-use std::net::TcpListener;
-use std::io::{Read, Write};
-
-fn main() {
-    let listener = TcpListener::bind("127.0.0.1:7878").unwrap();
-    println!("Server listening on port 7878");
-
-    for stream in listener.incoming() {
-        let mut stream = stream.unwrap();
-        let mut buffer = [0; 1024];
-        stream.read(&mut buffer).unwrap();
-
-        let response = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n<html><body><h1>Hello from Rust!</h1></body></html>";
-        stream.write_all(response.as_bytes()).unwrap();
-        stream.flush().unwrap();
-    }
-}`,
-
-  SQL: `-- Analyze monthly revenue trends
-WITH monthly_revenue AS (
-    SELECT
-        DATE_TRUNC('month', order_date) AS month,
-        SUM(total_amount) AS revenue,
-        COUNT(DISTINCT customer_id) AS active_customers
-    FROM orders
-    WHERE status = 'completed'
-    GROUP BY DATE_TRUNC('month', order_date)
-)
-SELECT
-    month,
-    revenue,
-    active_customers,
-    ROUND(revenue / active_customers, 2) AS revenue_per_customer,
-    ROUND(
-        (revenue - LAG(revenue) OVER (ORDER BY month))
-        / LAG(revenue) OVER (ORDER BY month) * 100, 2
-    ) AS growth_percentage
-FROM monthly_revenue
-ORDER BY month DESC;`,
-
-  CSS: `/* Animated gradient background */
-.hero-section {
-    background: linear-gradient(
-        135deg,
-        #667eea 0%,
-        #764ba2 50%,
-        #f093fb 100%
-    );
-    background-size: 400% 400%;
-    animation: gradient 15s ease infinite;
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-@keyframes gradient {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
-}
-
-.card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
-    transition: all 0.3s ease;
-}`,
-};
-
-const prTitles = [
-  'feat: Add user authentication module', 'fix: Resolve login redirect loop', 'refactor: Improve API response structure',
-  'feat: Implement dark mode toggle', 'fix: Correct pagination offset calculation', 'feat: Add file upload with progress',
-  'chore: Update dependencies to latest', 'fix: Handle empty state in search results', 'feat: Add export to CSV',
-  'refactor: Extract common utilities', 'feat: Add WebSocket real-time updates', 'fix: Memory leak in event listeners',
-  'feat: Implement search with debounce', 'fix: Mobile responsive layout issues', 'feat: Add notification preferences',
-  'refactor: Migrate to TypeScript', 'feat: Add rate limiting middleware', 'fix: CORS configuration for production',
-  'feat: Add activity feed timeline', 'chore: Configure CI/CD pipeline', 'feat: Implement role-based access control',
-  'fix: Date formatting timezone bug', 'feat: Add bulk delete operations', 'refactor: Optimize database queries',
-  'feat: Add webhook event system', 'fix: Accessibility keyboard navigation', 'feat: Add localization support',
-  'chore: Add unit test coverage', 'feat: Implement data export API', 'fix: Session expiry handling'
-];
-
-const codeDiffs = [
-`-  const result = await fetch('/api/data');
--  return result.json();
-+  const response = await fetch('/api/data');
-+  if (!response.ok) {
-+    throw new Error(\`HTTP error! status: \${response.status}\`);
-+  }
-+  return response.json();`,
-
-`- function calculateTotal(items) {
--   return items.reduce((sum, item) => sum + item.price, 0);
-+ function calculateTotal(items, taxRate = 0) {
-+   const subtotal = items.reduce((sum, item) => sum + item.price, 0);
-+   const tax = subtotal * taxRate;
-+   return subtotal + tax;
-  }`,
-
-`- const user = db.query('SELECT * FROM users WHERE id = ' + userId);
-+ const user = db.query('SELECT * FROM users WHERE id = ?', [userId]);`,
-
-`- useEffect(() => {
--   fetchData();
-- }, []);
-+ useEffect(() => {
-+   fetchData();
-+ }, []);
-+ 
-+ useEffect(() => {
-+   return () => {
-+     cleanup();
-+   };
-+ }, []);`,
-];
-
-function seededRandom(seed) {
-  let s = seed;
-  return function() {
-    s = (s * 9301 + 49297) % 233280;
-    return s / 233280;
-  };
-}
-
-const rand = seededRandom(42);
-
-function pick(arr) {
-  return arr[Math.floor(rand() * arr.length)];
-}
-
-function pickN(arr, n) {
-  const shuffled = [...arr].sort(() => rand() - 0.5);
-  return shuffled.slice(0, n);
-}
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/devcollab';
 
 async function seed() {
-  console.log('Clearing existing data...');
-  clearData();
+  console.log('Connecting to MongoDB...');
+  await mongoose.connect(MONGO_URI);
+  console.log('Dropping existing data...');
+  const collections = await mongoose.connection.db.listCollections().toArray();
+  for (const c of collections) {
+    await mongoose.connection.db.dropCollection(c.name);
+  }
 
-  console.log('Creating users...');
-  const hashedPassword = await bcrypt.hash('admin123', 10);
-  const devPassword = await bcrypt.hash('dev123', 10);
+  console.log('Seeding database...');
+  const hash = await bcrypt.hash('password123', 10);
 
-  const insertUser = db.prepare(
-    `INSERT INTO users (name, email, password, username, bio, location, website, primary_language, skills, role, contributions_count, followers_count, following_count, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-  );
+  // --- Users ---
+  const users = await User.insertMany([
+    { name: 'Alex Johnson', email: 'alex@example.com', password: hash, username: 'alexj', bio: 'Full-stack developer passionate about React and Node.js', location: 'San Francisco, CA', website: 'https://alexj.dev', primary_language: 'JavaScript', role: 'admin', followers_count: 15, following_count: 8 },
+    { name: 'Sarah Chen', email: 'sarah@example.com', password: hash, username: 'sarahchen', bio: 'Python developer and data science enthusiast', location: 'New York, NY', website: 'https://sarahchen.io', primary_language: 'Python', role: 'developer', followers_count: 23, following_count: 12 },
+    { name: 'Marcus Williams', email: 'marcus@example.com', password: hash, username: 'marcusw', bio: 'Mobile app developer (Flutter & React Native)', location: 'London, UK', website: null, primary_language: 'Dart', role: 'developer', followers_count: 7, following_count: 5 },
+    { name: 'Priya Patel', email: 'priya@example.com', password: hash, username: 'priyap', bio: 'DevOps engineer & Go enthusiast', location: 'Bangalore, India', website: 'https://priyap.dev', primary_language: 'Go', role: 'developer', followers_count: 31, following_count: 9 },
+    { name: 'Jordan Lee', email: 'jordan@example.com', password: hash, username: 'jordanl', bio: 'Frontend developer specializing in Vue.js and UI/UX', location: 'Seattle, WA', website: null, primary_language: 'Vue.js', role: 'moderator', followers_count: 12, following_count: 6 },
+    { name: 'Demo User', email: 'demo@example.com', password: hash, username: 'demo', bio: 'Demo account for testing', location: null, website: null, primary_language: 'JavaScript', role: 'developer', skills: ['React', 'Node.js', 'MongoDB'], followers_count: 3, following_count: 2 },
+  ]);
+  const [alex, sarah, marcus, priya, jordan, demo] = users;
+  console.log(`Created ${users.length} users`);
 
-  db.transaction(() => {
-    insertUser.run('Admin User', 'admin@devcollab.com', hashedPassword, 'admin', 'Platform administrator', 'San Francisco, CA', 'https://admin.dev', 'TypeScript', JSON.stringify(['Admin', 'Management', 'DevOps']), 'admin', 0, 0, 0, daysAgo(90));
+  // --- Follows ---
+  await Follow.insertMany([
+    { follower_id: demo._id, following_id: alex._id },
+    { follower_id: demo._id, following_id: sarah._id },
+    { follower_id: alex._id, following_id: demo._id },
+    { follower_id: alex._id, following_id: priya._id },
+    { follower_id: sarah._id, following_id: alex._id },
+    { follower_id: sarah._id, following_id: jordan._id },
+    { follower_id: marcus._id, following_id: alex._id },
+    { follower_id: priya._id, following_id: alex._id },
+    { follower_id: jordan._id, following_id: sarah._id },
+  ]);
+  console.log('Created follows');
 
-    for (const dev of devs) {
-      insertUser.run(
-        dev.name, dev.email, devPassword, dev.username,
-        dev.bio, pick(['Bangalore, India', 'Mumbai, India', 'Remote', 'San Francisco, CA', 'New York, NY', 'London, UK', 'Berlin, Germany']),
-        `https://${dev.username}.dev`, dev.primary_language,
-        JSON.stringify(dev.skills), 'developer',
-        Math.floor(rand() * 50), Math.floor(rand() * 100), Math.floor(rand() * 50),
-        daysAgo(Math.floor(rand() * 80) + 10)
-      );
+  // --- Projects ---
+  const projects = await Project.insertMany([
+    { owner_id: alex._id, name: 'TaskFlow', description: 'A modern project management tool with real-time collaboration features', primary_language: 'JavaScript', visibility: 'public', tags: ['react', 'node', 'real-time'], stars_count: 42, forks_count: 12, tasks_count: 8, readme_content: '# TaskFlow\n\nA modern project management tool.\n\n## Features\n- Real-time collaboration\n- Task management\n- Team dashboards\n' },
+    { owner_id: sarah._id, name: 'DataVizPro', description: 'Advanced data visualization library for Python with support for interactive charts', primary_language: 'Python', visibility: 'public', tags: ['python', 'visualization', 'data-science'], stars_count: 89, forks_count: 34, tasks_count: 15, readme_content: '# DataVizPro\n\nAdvanced data visualization library.\n\n## Features\n- Interactive charts\n- Statistical plots\n- Real-time data streams\n' },
+    { owner_id: marcus._id, name: 'HealthTrack', description: 'A cross-platform health tracking mobile application', primary_language: 'Dart', visibility: 'public', tags: ['flutter', 'health', 'mobile'], stars_count: 18, forks_count: 5, tasks_count: 12, readme_content: '# HealthTrack\n\nCross-platform health tracking app.\n\n## Features\n- Step tracking\n- Sleep monitoring\n- Nutrition logging\n' },
+    { owner_id: priya._id, name: 'CloudDeploy', description: 'Automated deployment tool for cloud infrastructure management', primary_language: 'Go', visibility: 'public', tags: ['go', 'devops', 'cloud'], stars_count: 56, forks_count: 23, tasks_count: 10, readme_content: '# CloudDeploy\n\nAutomated deployment tool.\n\n## Features\n- Multi-cloud support\n- Infrastructure as Code\n- Rollback capabilities\n' },
+    { owner_id: jordan._id, name: 'VueStore', description: 'E-commerce frontend built with Vue.js and Pinia store', primary_language: 'Vue.js', visibility: 'public', tags: ['vue', 'ecommerce', 'pinia'], stars_count: 31, forks_count: 8, tasks_count: 6, readme_content: '# VueStore\n\nE-commerce frontend built with Vue.js.\n\n## Features\n- Product catalog\n- Shopping cart\n- Checkout flow\n' },
+    { owner_id: demo._id, name: 'DevCollab API', description: 'The main API for the DevCollab platform', primary_language: 'JavaScript', visibility: 'public', tags: ['api', 'node', 'express', 'mongodb'], stars_count: 5, forks_count: 2, tasks_count: 4, readme_content: '# DevCollab API\n\nBackend API for DevCollab.\n\n## Features\n- User auth\n- Project management\n- Code snippets\n' },
+    { owner_id: alex._id, name: 'Private Notes', description: 'Personal notes app (private)', primary_language: 'JavaScript', visibility: 'private', tags: ['notes', 'personal'], stars_count: 0, forks_count: 0, tasks_count: 0, readme_content: '# Private Notes\n\nA private note-taking application.\n' },
+  ]);
+  const [taskFlow, dataViz, healthTrack, cloudDeploy, vueStore, devcollabApi, privateNotes] = projects;
+  console.log(`Created ${projects.length} projects`);
+
+  // --- Project Collaborators ---
+  await ProjectCollaborator.insertMany([
+    { project_id: taskFlow._id, user_id: alex._id, role: 'owner' },
+    { project_id: taskFlow._id, user_id: demo._id, role: 'collaborator' },
+    { project_id: dataViz._id, user_id: sarah._id, role: 'owner' },
+    { project_id: dataViz._id, user_id: alex._id, role: 'collaborator' },
+    { project_id: dataViz._id, user_id: jordan._id, role: 'collaborator' },
+    { project_id: healthTrack._id, user_id: marcus._id, role: 'owner' },
+    { project_id: healthTrack._id, user_id: demo._id, role: 'collaborator' },
+    { project_id: cloudDeploy._id, user_id: priya._id, role: 'owner' },
+    { project_id: cloudDeploy._id, user_id: sarah._id, role: 'collaborator' },
+    { project_id: vueStore._id, user_id: jordan._id, role: 'owner' },
+    { project_id: vueStore._id, user_id: demo._id, role: 'collaborator' },
+    { project_id: devcollabApi._id, user_id: demo._id, role: 'owner' },
+    { project_id: devcollabApi._id, user_id: alex._id, role: 'collaborator' },
+    { project_id: privateNotes._id, user_id: alex._id, role: 'owner' },
+  ]);
+  console.log('Created project collaborators');
+
+  // --- Tasks ---
+  await Task.insertMany([
+    { project_id: taskFlow._id, title: 'Set up CI/CD pipeline', description: 'Configure GitHub Actions for automated testing and deployment', assignee_id: alex._id, priority: 'high', status: 'in_progress', tags: ['devops', 'ci-cd'] },
+    { project_id: taskFlow._id, title: 'Implement drag-and-drop UI', description: 'Add drag-and-drop functionality for task cards on the board view', assignee_id: demo._id, priority: 'medium', status: 'open', tags: ['frontend', 'ui'] },
+    { project_id: taskFlow._id, title: 'Add real-time notifications', description: 'Implement WebSocket-based notifications for task assignments', assignee_id: alex._id, priority: 'high', status: 'open', tags: ['backend', 'real-time'] },
+    { project_id: taskFlow._id, title: 'Write unit tests', description: 'Achieve 80% test coverage for the main components', assignee_id: null, priority: 'medium', status: 'open', tags: ['testing'] },
+    { project_id: dataViz._id, title: 'Add 3D scatter plot support', description: 'Implement 3D scatter plots using Matplotlib', assignee_id: sarah._id, priority: 'medium', status: 'open', tags: ['3d', 'visualization'] },
+    { project_id: dataViz._id, title: 'Optimize rendering performance', description: 'Improve chart rendering speed for large datasets', assignee_id: alex._id, priority: 'high', status: 'open', tags: ['performance'] },
+    { project_id: dataViz._id, title: 'Create documentation site', description: 'Build a documentation site using Sphinx', assignee_id: jordan._id, priority: 'low', status: 'completed', tags: ['docs'] },
+    { project_id: healthTrack._id, title: 'Implement step counting algorithm', description: 'Build step counting using accelerometer data', assignee_id: marcus._id, priority: 'high', status: 'in_progress', tags: ['algorithm', 'mobile'] },
+    { project_id: healthTrack._id, title: 'Design sleep tracking UI', description: 'Create sleep tracking dashboard with charts', assignee_id: demo._id, priority: 'medium', status: 'open', tags: ['ui', 'design'] },
+    { project_id: cloudDeploy._id, title: 'Add AWS ECS support', description: 'Support deployment to AWS Elastic Container Service', assignee_id: priya._id, priority: 'high', status: 'in_progress', tags: ['aws', 'deployment'] },
+    { project_id: cloudDeploy._id, title: 'Implement rollback feature', description: 'Add automatic rollback on deployment failure', assignee_id: sarah._id, priority: 'medium', status: 'open', tags: ['deployment', 'safety'] },
+    { project_id: vueStore._id, title: 'Build product search', description: 'Implement product search with filters', assignee_id: jordan._id, priority: 'high', status: 'in_progress', tags: ['search', 'frontend'] },
+    { project_id: vueStore._id, title: 'Integrate payment gateway', description: 'Add Stripe payment integration for checkout', assignee_id: demo._id, priority: 'high', status: 'open', tags: ['payment', 'stripe'] },
+    { project_id: devcollabApi._id, title: 'Add rate limiting', description: 'Implement API rate limiting to prevent abuse', assignee_id: alex._id, priority: 'medium', status: 'open', tags: ['security'] },
+    { project_id: devcollabApi._id, title: 'Write API documentation', description: 'Document all API endpoints with examples', assignee_id: demo._id, priority: 'low', status: 'open', tags: ['docs'] },
+    { project_id: devcollabApi._id, title: 'Implement search functionality', description: 'Add full-text search across projects and snippets', assignee_id: alex._id, priority: 'high', status: 'in_progress', tags: ['backend'] },
+  ]);
+  console.log('Created tasks');
+
+  // --- Snippets ---
+  await Snippet.insertMany([
+    { user_id: alex._id, title: 'React Custom Hook for Debounced Search', description: 'A reusable React hook that debounces search input', language: 'javascript', code: 'import { useState, useEffect } from "react";\n\nexport function useDebounce(value, delay = 500) {\n  const [debounced, setDebounced] = useState(value);\n  useEffect(() => {\n    const timer = setTimeout(() => setDebounced(value), delay);\n    return () => clearTimeout(timer);\n  }, [value, delay]);\n  return debounced;\n}', tags: ['react', 'hooks', 'debounce'], visibility: 'public', project_id: taskFlow._id, likes_count: 7 },
+    { user_id: alex._id, title: 'Express.js Request Logger Middleware', description: 'A simple request logger middleware for Express', language: 'javascript', code: 'function requestLogger(req, res, next) {\n  const start = Date.now();\n  res.on("finish", () => {\n    const duration = Date.now() - start;\n    console.log(\n      `${req.method} ${req.originalUrl} ${res.statusCode} - ${duration}ms`\n    );\n  });\n  next();\n}', tags: ['express', 'middleware', 'logging'], visibility: 'public', project_id: null, likes_count: 12 },
+    { user_id: sarah._id, title: 'Python Data Cleaner', description: 'Clean and preprocess data with pandas', language: 'python', code: 'import pandas as pd\nimport numpy as np\n\ndef clean_data(df):\n    df = df.drop_duplicates()\n    df = df.fillna(df.median(numeric_only=True))\n    return df', tags: ['python', 'pandas', 'data-cleaning'], visibility: 'public', project_id: dataViz._id, likes_count: 15 },
+    { user_id: marcus._id, title: 'Flutter HTTP Client', description: 'HTTP client wrapper for Flutter with error handling', language: 'dart', code: 'import \'dart:convert\';\nimport \'package:http/http.dart\' as http;\n\nclass ApiClient {\n  final String baseUrl;\n  \n  Future<Map<String, dynamic>> get(String endpoint) async {\n    final response = await http.get(Uri.parse(\'$baseUrl/$endpoint\'));\n    return json.decode(response.body);\n  }\n}', tags: ['flutter', 'http', 'api'], visibility: 'public', project_id: healthTrack._id, likes_count: 5 },
+    { user_id: priya._id, title: 'Go Concurrency Pattern', description: 'Worker pool pattern in Go', language: 'go', code: 'func worker(id int, jobs <-chan int, results chan<- int) {\n    for j := range jobs {\n        results <- j * 2\n    }\n}', tags: ['go', 'concurrency', 'goroutines'], visibility: 'public', project_id: cloudDeploy._id, likes_count: 20 },
+    { user_id: demo._id, title: 'Mongoose Connection Setup', description: 'MongoDB connection with Mongoose', language: 'javascript', code: 'import mongoose from "mongoose";\n\nasync function connectDB(uri) {\n  try {\n    await mongoose.connect(uri);\n    console.log("MongoDB connected");\n  } catch (err) {\n    console.error("Connection error:", err);\n    process.exit(1);\n  }\n}', tags: ['mongoose', 'mongodb', 'backend'], visibility: 'public', project_id: devcollabApi._id, likes_count: 3 },
+    { user_id: jordan._id, title: 'Vue.js Composables', description: 'Reusable Vue.js composables pattern', language: 'javascript', code: 'import { ref, onMounted, onUnmounted } from "vue";\n\nexport function useMouse() {\n  const x = ref(0);\n  const y = ref(0);\n  \n  function update(e) { x.value = e.pageX; y.value = e.pageY; }\n  onMounted(() => window.addEventListener("mousemove", update));\n  onUnmounted(() => window.removeEventListener("mousemove", update));\n  \n  return { x, y };\n}', tags: ['vue', 'composables', 'reactive'], visibility: 'public', project_id: vueStore._id, likes_count: 8 },
+    { user_id: demo._id, title: 'Private API Key validator', description: 'A validator utility (private)', language: 'javascript', code: 'function validateApiKey(key) { return key && key.length === 32; }', tags: ['security', 'validation'], visibility: 'private', project_id: null, likes_count: 0 },
+  ]);
+  console.log('Created snippets');
+
+  // --- Pull Requests ---
+  await PullRequest.insertMany([
+    { project_id: taskFlow._id, title: 'Add drag-and-drop board UI', description: 'Implements drag-and-drop functionality for the task board. Uses react-beautiful-dnd library.', source_branch: 'feature/drag-drop', target_branch: 'main', opened_by: demo._id, status: 'open' },
+    { project_id: taskFlow._id, title: 'Implement WebSocket notifications', description: 'Adds real-time notifications using Socket.io', source_branch: 'feature/notifications', target_branch: 'main', opened_by: alex._id, status: 'open' },
+    { project_id: dataViz._id, title: 'Add 3D scatter plot', description: 'Implements 3D scatter plots with interactive rotation', source_branch: 'feature/3d-plots', target_branch: 'main', opened_by: sarah._id, status: 'merged' },
+    { project_id: dataViz._id, title: 'Performance optimization', description: 'Optimizes rendering for datasets with 100k+ points', source_branch: 'opt/rendering', target_branch: 'main', opened_by: alex._id, status: 'open' },
+    { project_id: healthTrack._id, title: 'Step counting algorithm', description: 'Implements step counting using phone accelerometer', source_branch: 'feature/step-counter', target_branch: 'main', opened_by: marcus._id, status: 'open' },
+    { project_id: cloudDeploy._id, title: 'AWS ECS deployment support', description: 'Adds ECS deployment support with Task Definitions', source_branch: 'feature/ecs', target_branch: 'main', opened_by: priya._id, status: 'open' },
+    { project_id: vueStore._id, title: 'Product search feature', description: 'Full-text search with category filters', source_branch: 'feature/search', target_branch: 'main', opened_by: jordan._id, status: 'open' },
+  ]);
+  console.log('Created pull requests');
+
+  // --- PR Comments ---
+  await PRComment.insertMany([
+    { pr_id: (await PullRequest.findOne({ title: 'Add drag-and-drop board UI' }))._id, user_id: alex._id, content: 'Great work! I left some suggestions on the drag handler.' },
+    { pr_id: (await PullRequest.findOne({ title: 'Add drag-and-drop board UI' }))._id, user_id: demo._id, content: 'Thanks Alex! I\'ll review those and make updates.' },
+    { pr_id: (await PullRequest.findOne({ title: 'Add 3D scatter plot' }))._id, user_id: jordan._id, content: 'The interactive rotation is amazing!' },
+    { pr_id: (await PullRequest.findOne({ title: 'Add 3D scatter plot' }))._id, user_id: sarah._id, content: 'Thanks Jordan! Took some time to get the math right.' },
+    { pr_id: (await PullRequest.findOne({ title: 'AWS ECS deployment support' }))._id, user_id: sarah._id, content: 'Make sure to add IAM permissions documentation.' },
+  ]);
+  console.log('Created PR comments');
+
+  // --- Discussions ---
+  const discussions = await Discussion.insertMany([
+    { project_id: taskFlow._id, author_id: demo._id, title: 'Should we migrate to TypeScript?', content: 'I think migrating to TypeScript would improve code quality and developer experience.', tags: ['typescript', 'discussion'], replies_count: 2 },
+    { project_id: taskFlow._id, author_id: alex._id, title: 'New UI component library proposal', content: 'Let\'s discuss which UI library to use for the new design system.', tags: ['ui', 'design'], replies_count: 1 },
+    { project_id: dataViz._id, author_id: jordan._id, title: 'Dash app integration ideas', content: 'We could integrate with Plotly Dash for web-based dashboards.', tags: ['dash', 'integration'], replies_count: 3 },
+    { project_id: cloudDeploy._id, author_id: sarah._id, title: 'Support for Kubernetes?', content: 'Would it make sense to add Kubernetes deployment support?', tags: ['kubernetes', 'feature-request'], replies_count: 2 },
+    { project_id: vueStore._id, author_id: demo._id, title: 'State management patterns', content: 'Comparing Pinia vs Vuex for our store layer.', tags: ['vue', 'state-management'], replies_count: 1 },
+    { project_id: devcollabApi._id, author_id: alex._id, title: 'API versioning strategy', content: 'Should we use URL prefix or header-based versioning?', tags: ['api', 'versioning'], replies_count: 2 },
+  ]);
+  console.log('Created discussions');
+
+  // --- Discussion Replies ---
+  await DiscussionReply.insertMany([
+    { discussion_id: discussions[0]._id, author_id: alex._id, content: 'Good idea! I\'ve been thinking the same. TypeScript would catch many bugs early.' },
+    { discussion_id: discussions[0]._id, author_id: demo._id, content: 'Agreed. The migration could be done incrementally.' },
+    { discussion_id: discussions[1]._id, author_id: demo._id, content: 'I suggest we go with Material-UI for consistency.' },
+    { discussion_id: discussions[2]._id, author_id: sarah._id, content: 'Great idea! I can work on the integration.' },
+    { discussion_id: discussions[2]._id, author_id: priya._id, content: 'This would be useful for the CloudDeploy dashboard too.' },
+    { discussion_id: discussions[2]._id, author_id: jordan._id, content: 'Let me create a POC and share it.' },
+    { discussion_id: discussions[3]._id, author_id: priya._id, content: 'Yes! K8s support is the next big feature we need.' },
+    { discussion_id: discussions[3]._id, author_id: sarah._id, content: 'I can help with the Helm charts.' },
+    { discussion_id: discussions[4]._id, author_id: jordan._id, content: 'Pinia is more lightweight and has better TypeScript support.' },
+    { discussion_id: discussions[5]._id, author_id: demo._id, content: 'I prefer URL prefix versioning — more explicit.' },
+    { discussion_id: discussions[5]._id, author_id: alex._id, content: 'True, but header-based keeps URLs cleaner.' },
+  ]);
+  console.log('Created discussion replies');
+
+  // --- Activity Log ---
+  await ActivityLog.insertMany([
+    { user_id: alex._id, action_type: 'create', entity_type: 'project', entity_id: taskFlow._id, description: 'Created project TaskFlow' },
+    { user_id: sarah._id, action_type: 'create', entity_type: 'project', entity_id: dataViz._id, description: 'Created project DataVizPro' },
+    { user_id: marcus._id, action_type: 'create', entity_type: 'project', entity_id: healthTrack._id, description: 'Created project HealthTrack' },
+    { user_id: priya._id, action_type: 'create', entity_type: 'project', entity_id: cloudDeploy._id, description: 'Created project CloudDeploy' },
+    { user_id: jordan._id, action_type: 'create', entity_type: 'project', entity_id: vueStore._id, description: 'Created project VueStore' },
+    { user_id: demo._id, action_type: 'create', entity_type: 'project', entity_id: devcollabApi._id, description: 'Created project DevCollab API' },
+    { user_id: alex._id, action_type: 'update', entity_type: 'task', entity_id: null, description: 'Updated task status' },
+    { user_id: demo._id, action_type: 'create', entity_type: 'pr', entity_id: null, description: 'Opened PR "Add drag-and-drop board UI"' },
+    { user_id: alex._id, action_type: 'comment', entity_type: 'pr', entity_id: null, description: 'Commented on PR "Add drag-and-drop board UI"' },
+    { user_id: sarah._id, action_type: 'create', entity_type: 'snippet', entity_id: null, description: 'Created snippet "Python Data Cleaner"' },
+    { user_id: demo._id, action_type: 'register', entity_type: 'user', entity_id: null, description: 'Joined DevCollab' },
+    { user_id: demo._id, action_type: 'follow', entity_type: 'user', entity_id: alex._id, description: 'Started following user' },
+    { user_id: demo._id, action_type: 'create', entity_type: 'discussion', entity_id: discussions[0]._id, description: 'Created discussion "Should we migrate to TypeScript?"' },
+  ]);
+  console.log('Created activity logs');
+
+  // --- Flags ---
+  await Flag.insertMany([
+    { reporter_id: alex._id, target_type: 'user', target_id: demo._id, reason: 'spam', description: 'Spamming in comments' },
+    { reporter_id: sarah._id, target_type: 'user', target_id: null, reason: 'inappropriate', description: 'Inappropriate content in discussion' },
+  ]);
+  console.log('Created flags');
+
+  // --- Snippet Likes ---
+  const snippetDocs = await Snippet.find({});
+  const demoUser = demo;
+  for (const snippet of snippetDocs) {
+    const exists = await SnippetLike.findOne({ snippet_id: snippet._id, user_id: demoUser._id });
+    if (!exists) {
+      await SnippetLike.create({ snippet_id: snippet._id, user_id: demoUser._id });
     }
-  })();
-
-  console.log('Creating projects...');
-  const insertProject = db.prepare(
-    `INSERT INTO projects (owner_id, name, description, visibility, primary_language, tags, readme_content, stars_count, forks_count, is_archived, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-  );
-
-  db.transaction(() => {
-    for (let i = 0; i < projects.length; i++) {
-      const p = projects[i];
-      const ownerId = Math.floor(rand() * 15) + 2;
-      const projectId = i + 1;
-      insertProject.run(
-        ownerId, p.name, p.description, p.visibility, p.primary_language,
-        JSON.stringify(p.tags),
-        '# ' + p.name + '\n\n' + p.description + '\n\n## Getting Started\n\n```bash\nnpm install\nnpm run dev\n```\n\n## Features\n\n- **' + p.tags.join('**\n- **') + '**\n\n## Contributing\n\nPull requests are welcome. For major changes, please open an issue first.',
-        Math.floor(rand() * 200), Math.floor(rand() * 50), Math.floor(rand() * 2) ? 0 : 1,
-        daysAgo(Math.floor(rand() * 80) + 5), hoursAgo(Math.floor(rand() * 720))
-      );
+  }
+  for (const snippet of snippetDocs) {
+    if (snippet.likes_count === 0) {
+      await Snippet.findByIdAndUpdate(snippet._id, { $set: { likes_count: 1 } });
     }
-  })();
+  }
+  console.log('Created snippet likes');
 
-  console.log('Creating project collaborators...');
-  const insertCollab = db.prepare(
-    `INSERT INTO project_collaborators (project_id, user_id, role, joined_at) VALUES (?, ?, ?, ?)`
-  );
+  console.log('\n✓ Seed completed successfully!');
+  console.log('Login credentials: demo@example.com / password123');
 
-  db.transaction(() => {
-    for (let i = 1; i <= 20; i++) {
-      const collabCount = Math.floor(rand() * 4) + 1;
-      for (let j = 0; j < collabCount; j++) {
-        const userId = Math.floor(rand() * 15) + 2;
-        insertCollab.run(i, userId, j === 0 ? 'owner' : 'collaborator', daysAgo(Math.floor(rand() * 60)));
-      }
-    }
-  })();
-
-  console.log('Creating tasks...');
-  const insertTask = db.prepare(
-    `INSERT INTO tasks (project_id, title, description, status, priority, labels, assignee_id, created_by, due_date, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-  );
-
-  const statuses = ['backlog', 'in_progress', 'in_review', 'done'];
-  const priorities = ['Low', 'Medium', 'High', 'Critical'];
-  const labelOptions = ['Bug', 'Feature', 'Enhancement', 'Docs', 'Question'];
-
-  db.transaction(() => {
-    for (let i = 0; i < 60; i++) {
-      const projectId = (i % 20) + 1;
-      const assigneeId = Math.floor(rand() * 15) + 2;
-      const createdBy = Math.floor(rand() * 15) + 2;
-      insertTask.run(
-        projectId, taskTitles[i], `Description for: ${taskTitles[i]}\n\n## Acceptance Criteria\n- [ ] Criterion 1\n- [ ] Criterion 2\n- [ ] Criterion 3`,
-        pick(statuses), pick(priorities),
-        JSON.stringify(pickN(labelOptions, Math.floor(rand() * 2) + 1)),
-        assigneeId, createdBy,
-        daysAgo(Math.floor(rand() * 14) - 7),
-        daysAgo(Math.floor(rand() * 30)), hoursAgo(Math.floor(rand() * 720))
-      );
-    }
-  })();
-
-  console.log('Creating snippets...');
-  const insertSnippet = db.prepare(
-    `INSERT INTO snippets (user_id, project_id, title, description, language, code_content, tags, visibility, views_count, likes_count, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-  );
-
-  const snippetTitles = [
-    'Debounce Utility Function', 'API Response Wrapper', 'Quick Sort Implementation',
-    'Go HTTP Server', 'Rust TCP Server', 'SQL Monthly Revenue Analysis',
-    'Animated Gradient Hero', 'Array Chunk Helper', 'JWT Auth Middleware',
-    'React Custom Hook: useLocalStorage', 'Docker Compose Setup', 'CSS Grid Layout',
-    'Python Data Validation', 'TypeScript Utility Types', 'Redis Cache Wrapper',
-    'React Context Provider', 'Node.js Stream Processing', 'SQL Join Examples',
-    'Rust Error Handling', 'Go Concurrency Pattern', 'Kubernetes Deployment YAML',
-    'React Error Boundary', 'Python Async/Await Pattern', 'Shell Script Backup',
-    'CSS Animation Keyframes', 'TypeScript Generic Repository', 'Express Rate Limiter',
-    'React Portal Component', 'SQL Index Strategy', 'Python Singleton Pattern',
-    'Go Testing Patterns', 'Rust Trait Implementation', 'Vue Composition API',
-    'React Render Props Pattern', 'Python Decorator Examples', 'Shell Script Automation',
-    'CSS Custom Properties', 'TypeScript Decorators', 'Node.js Event Emitter', 'SQL Stored Procedure'
-  ];
-
-  db.transaction(() => {
-    for (let i = 0; i < 40; i++) {
-      const userId = (i % 15) + 2;
-      const projectId = (i % 20) + 1;
-      const lang = pick(languages);
-      const code = snippetContents[lang] || snippetContents[pick(Object.keys(snippetContents))];
-      insertSnippet.run(
-        userId, projectId, snippetTitles[i],
-        `A useful ${lang} snippet for everyday development.`,
-        lang, code,
-        JSON.stringify(pickN(labelOptions, 2)),
-        'public', Math.floor(rand() * 500), Math.floor(rand() * 100),
-        daysAgo(Math.floor(rand() * 50))
-      );
-    }
-  })();
-
-  console.log('Creating pull requests...');
-  const insertPR = db.prepare(
-    `INSERT INTO pull_requests (project_id, opened_by, title, description, from_branch, to_branch, code_diff, status, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-  );
-
-  db.transaction(() => {
-    for (let i = 0; i < 30; i++) {
-      const projectId = (i % 20) + 1;
-      const userId = (i % 15) + 2;
-      const status = i < 20 ? 'open' : (i < 25 ? 'merged' : 'closed');
-      insertPR.run(
-        projectId, userId, prTitles[i],
-        `## Summary\n\nThis PR addresses ${prTitles[i].toLowerCase()}.\n\n## Changes\n- ${Math.floor(rand() * 5) + 1} files changed\n- ${Math.floor(rand() * 100) + 10} additions\n- ${Math.floor(rand() * 50)} deletions\n\n## Checklist\n- [x] Code compiles\n- [x] Tests pass\n- [x] Self-reviewed`,
-        pick(['feature', 'fix', 'chore', 'refactor']),
-        pick(['main', 'develop', 'master']),
-        pick(codeDiffs),
-        status,
-        daysAgo(Math.floor(rand() * 30)), hoursAgo(Math.floor(rand() * 720))
-      );
-    }
-  })();
-
-  console.log('Creating discussions...');
-  const insertDiscussion = db.prepare(
-    `INSERT INTO discussions (project_id, author_id, title, body, category, views_count, replies_count, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
-  );
-
-  const discussionTitles = [
-    'How should we structure the API?', 'Proposal: Migrate to TypeScript', 'Bug: Infinite loop in search component',
-    'Feature request: Dark mode', 'Best practices for state management', 'Code review guidelines discussion',
-    'Tech stack decision: React vs Vue', 'Performance optimization ideas', 'Documentation improvement plan',
-    'Testing strategy for microservices', 'Database migration approach', 'API versioning strategy',
-    'Error handling best practices', 'Deployment pipeline review', 'Security audit results',
-    'Accessibility improvements roadmap', 'Mobile responsive design patterns', 'Caching strategy discussion',
-    'Logging and monitoring setup', 'Package management workflow', 'Code style guide update',
-    'New developer onboarding process', 'Open source contribution guidelines', 'Release planning for v2.0',
-    'Technical debt reduction plan'
-  ];
-
-  const categories = ['announcement', 'question', 'idea', 'poll', 'general'];
-
-  db.transaction(() => {
-    for (let i = 0; i < 25; i++) {
-      const projectId = (i % 20) + 1;
-      const authorId = (i % 15) + 2;
-      insertDiscussion.run(
-        projectId, authorId, discussionTitles[i],
-        `## ${discussionTitles[i]}\n\nI'd like to start a discussion about this topic. Here are my thoughts...\n\nPlease share your feedback and suggestions below!\n\n---\n\n_Originally posted by user ${authorId}_`,
-        pick(categories),
-        Math.floor(rand() * 300), Math.floor(rand() * 15),
-        daysAgo(Math.floor(rand() * 40))
-      );
-    }
-  })();
-
-  console.log('Creating discussion replies...');
-  const insertReply = db.prepare(
-    `INSERT INTO discussion_replies (discussion_id, author_id, content, likes_count, created_at)
-     VALUES (?, ?, ?, ?, ?)`
-  );
-
-  db.transaction(() => {
-    for (let i = 1; i <= 25; i++) {
-      const replyCount = Math.floor(rand() * 5) + 1;
-      for (let j = 0; j < replyCount; j++) {
-        insertReply.run(
-          i, (j % 15) + 2,
-          `Great point! I think we should consider this from a different perspective. ${pick(['+1', 'Agreed!', 'Good suggestion.', 'Let me add to this...', 'I had similar thoughts.'])}`,
-          Math.floor(rand() * 20), daysAgo(Math.floor(rand() * 30))
-        );
-      }
-    }
-  })();
-
-  console.log('Creating follows...');
-  const insertFollow = db.prepare(
-    `INSERT INTO follows (follower_id, following_id, created_at) VALUES (?, ?, ?)`
-  );
-
-  db.transaction(() => {
-    const seen = new Set();
-    for (let i = 0; i < 80; i++) {
-      const follower = Math.floor(rand() * 15) + 2;
-      const following = Math.floor(rand() * 15) + 2;
-      if (follower !== following && !seen.has(`${follower}-${following}`)) {
-        seen.add(`${follower}-${following}`);
-        insertFollow.run(follower, following, daysAgo(Math.floor(rand() * 60)));
-      }
-    }
-  })();
-
-  console.log('Creating snippet likes...');
-  const insertLike = db.prepare(
-    `INSERT INTO snippet_likes (snippet_id, user_id, created_at) VALUES (?, ?, ?)`
-  );
-
-  db.transaction(() => {
-    for (let i = 0; i < 100; i++) {
-      const snippetId = Math.floor(rand() * 40) + 1;
-      const userId = Math.floor(rand() * 15) + 2;
-      try {
-        insertLike.run(snippetId, userId, daysAgo(Math.floor(rand() * 30)));
-      } catch (e) { }
-    }
-  })();
-
-  console.log('Creating activity log...');
-  const insertActivity = db.prepare(
-    `INSERT INTO activity_log (user_id, action_type, entity_type, entity_id, description, created_at)
-     VALUES (?, ?, ?, ?, ?, ?)`
-  );
-
-  const actions = [
-    { type: 'create', entity: 'project', desc: u => `Created new project` },
-    { type: 'complete', entity: 'task', desc: u => `Completed a task` },
-    { type: 'create', entity: 'snippet', desc: u => `Posted a code snippet` },
-    { type: 'create', entity: 'pull_request', desc: u => `Opened a pull request` },
-    { type: 'review', entity: 'pull_request', desc: u => `Reviewed a pull request` },
-    { type: 'comment', entity: 'discussion', desc: u => `Commented on a discussion` },
-    { type: 'create', entity: 'discussion', desc: u => `Started a discussion` },
-    { type: 'star', entity: 'project', desc: u => `Starred a project` },
-    { type: 'follow', entity: 'user', desc: u => `Followed another developer` },
-  ];
-
-  db.transaction(() => {
-    for (let i = 0; i < 200; i++) {
-      const userId = (i % 15) + 2;
-      const action = pick(actions);
-      const daysBack = Math.floor(rand() * 90);
-      insertActivity.run(
-        userId, action.type, action.entity,
-        Math.floor(rand() * 40) + 1,
-        action.desc(userId),
-        daysAgo(daysBack)
-      );
-    }
-  })();
-
-  console.log('Creating flags...');
-  const insertFlag = db.prepare(
-    `INSERT INTO flags (entity_type, entity_id, flagged_by, reason, status, created_at)
-     VALUES (?, ?, ?, ?, ?, ?)`
-  );
-
-  db.transaction(() => {
-    for (let i = 0; i < 5; i++) {
-      insertFlag.run(
-        pick(['snippet', 'project']),
-        Math.floor(rand() * 20) + 1,
-        Math.floor(rand() * 15) + 2,
-        pick(['Inappropriate content', 'Spam', 'Copyright violation', 'Not relevant', 'Duplicate']),
-        'pending',
-        daysAgo(Math.floor(rand() * 10))
-      );
-    }
-  })();
-
-  console.log('Updating follower/following counts...');
-  db.exec(`
-    UPDATE users SET followers_count = (
-      SELECT COUNT(*) FROM follows WHERE following_id = users.id
-    );
-    UPDATE users SET following_count = (
-      SELECT COUNT(*) FROM follows WHERE follower_id = users.id
-    );
-  `);
-
-  console.log('Seed complete!');
-  console.log('Admin: admin@devcollab.com / admin123');
-  console.log('Devs: dev1@devcollab.com through dev15@devcollab.com / dev123');
+  await mongoose.disconnect();
 }
 
-seed().catch(console.error);
+seed().catch(err => {
+  console.error('Seed failed:', err);
+  process.exit(1);
+});

@@ -1,78 +1,66 @@
-import { getDatabase } from '../db/database.js';
+import User from '../models/User.js';
+import Project from '../models/Project.js';
+import Snippet from '../models/Snippet.js';
+import Task from '../models/Task.js';
+import ProjectCollaborator from '../models/ProjectCollaborator.js';
+import ActivityLog from '../models/ActivityLog.js';
 
-export function getSummary(req, res, next) {
+export async function getStats(req, res, next) {
   try {
-    const db = getDatabase();
+    const totalUsers = await User.countDocuments();
+    const totalProjects = await Project.countDocuments();
+    const totalSnippets = await Snippet.countDocuments();
+    const totalTasks = await Task.countDocuments();
+    res.json({ totalUsers, totalProjects, totalSnippets, totalTasks });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function getTrending(req, res, next) {
+  try {
+    const projects = await Project.find({ visibility: 'public' })
+      .populate('owner_id', 'name username')
+      .sort({ stars_count: -1 })
+      .limit(10);
+    res.json({ projects });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function getUserDashboard(req, res, next) {
+  try {
     const userId = req.user.id;
 
-    const openTasks = db.prepare(
-      "SELECT COUNT(*) as count FROM tasks WHERE assignee_id = ? AND status NOT IN ('done')"
-    ).get(userId);
+    const myProjects = await Project.find({ owner_id: userId })
+      .sort({ updated_at: -1 })
+      .limit(5);
 
-    const myProjects = db.prepare(
-      'SELECT COUNT(DISTINCT project_id) as count FROM project_collaborators WHERE user_id = ?'
-    ).get(userId);
+    const collabProjects = await ProjectCollaborator.find({ user_id: userId })
+      .populate('project_id')
+      .sort({ joined_at: -1 })
+      .limit(5);
 
-    const mySnippets = db.prepare(
-      'SELECT COUNT(*) as count FROM snippets WHERE user_id = ?'
-    ).get(userId);
+    const inProgressTasks = await Task.find({ assignee_id: userId, status: { $in: ['open', 'in_progress'] } })
+      .populate('project_id', 'name')
+      .sort({ created_at: -1 })
+      .limit(10);
 
-    const myPRs = db.prepare(
-      'SELECT COUNT(*) as count FROM pull_requests WHERE opened_by = ?'
-    ).get(userId);
+    const recentActivity = await ActivityLog.find({ user_id: userId })
+      .sort({ created_at: -1 })
+      .limit(20);
+
+    const fullName = req.user.name;
+    const initial = fullName ? fullName.charAt(0).toUpperCase() : '?';
 
     res.json({
-      openTasks: openTasks.count,
-      myProjects: myProjects.count,
-      mySnippets: mySnippets.count,
-      myPRs: myPRs.count,
+      projects: myProjects,
+      collaborations: collabProjects.map(c => c.project_id).filter(Boolean),
+      tasks: inProgressTasks.map(t => ({ ...t.toObject(), project_name: t.project_id?.name })),
+      activity: recentActivity,
+      avatar: initial,
     });
-  } catch (err) {
-    next(err);
-  }
-}
-
-export function getTasks(req, res, next) {
-  try {
-    const db = getDatabase();
-    const { project, priority, status } = req.query;
-    let query = `SELECT t.*, p.name as project_name, u.name as creator_name
-      FROM tasks t JOIN projects p ON t.project_id = p.id
-      LEFT JOIN users u ON t.created_by = u.id
-      WHERE t.assignee_id = ?`;
-    const params = [req.user.id];
-
-    if (project) { query += ' AND p.id = ?'; params.push(project); }
-    if (priority) { query += ' AND t.priority = ?'; params.push(priority); }
-    if (status) { query += ' AND t.status = ?'; params.push(status); }
-
-    query += ' ORDER BY t.due_date ASC';
-    const tasks = db.prepare(query).all(...params);
-    tasks.forEach(t => { t.labels = JSON.parse(t.labels || '[]'); });
-    res.json({ tasks });
-  } catch (err) {
-    next(err);
-  }
-}
-
-export function getActivity(req, res, next) {
-  try {
-    const db = getDatabase();
-    const userId = req.user.id;
-
-    const activity = db.prepare(
-      'SELECT * FROM activity_log WHERE user_id = ? ORDER BY created_at DESC LIMIT 30'
-    ).all(userId);
-
-    const heatmap = db.prepare(`
-      SELECT DATE(created_at) as date, COUNT(*) as count
-      FROM activity_log
-      WHERE user_id = ? AND created_at >= datetime('now', '-365 days')
-      GROUP BY DATE(created_at)
-      ORDER BY date
-    `).all(userId);
-
-    res.json({ activity, heatmap });
   } catch (err) {
     next(err);
   }

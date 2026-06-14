@@ -1,69 +1,82 @@
-import { getDatabase } from '../db/database.js';
+import Discussion from '../models/Discussion.js';
+import DiscussionReply from '../models/DiscussionReply.js';
 import { logActivity } from '../utils/activityLogger.js';
 
-export function getProjectDiscussions(req, res, next) {
+export async function listDiscussions(req, res, next) {
   try {
-    const db = getDatabase();
-    const { projectId } = req.params;
-    let discussions;
-    if (projectId === 'all') {
-      discussions = db.prepare(
-        `SELECT d.*, u.name as author_name, u.username as author_username, p.name as project_name
-         FROM discussions d JOIN users u ON d.author_id = u.id
-         JOIN projects p ON d.project_id = p.id
-         WHERE p.visibility = 'public'
-         ORDER BY d.created_at DESC`
-      ).all();
-    } else {
-      discussions = db.prepare(
-        `SELECT d.*, u.name as author_name, u.username as author_username
-         FROM discussions d JOIN users u ON d.author_id = u.id
-         WHERE d.project_id = ? ORDER BY d.created_at DESC`
-      ).all(projectId);
-    }
-    res.json({ discussions });
+    const { projectId, tag, sort } = req.query;
+    const filter = {};
+    if (projectId) filter.project_id = projectId;
+    if (tag && tag !== 'all') filter.tags = tag;
+    const sortMap = { newest: { created_at: -1 }, replies: { replies_count: -1 }, updated: { updated_at: -1 } };
+    const sortOpt = sortMap[sort] || sortMap.newest;
+
+    const discussions = await Discussion.find(filter)
+      .populate('author_id', 'name username')
+      .sort(sortOpt)
+      .limit(50);
+
+    res.json({
+      discussions: discussions.map(d => ({
+        ...d.toObject(), author_name: d.author_id?.name, author_username: d.author_id?.username,
+      })),
+    });
   } catch (err) {
     next(err);
   }
 }
 
-export function createDiscussion(req, res, next) {
+export async function createDiscussion(req, res, next) {
   try {
-    const db = getDatabase();
-    const { project_id, title, body, category } = req.body;
-    const result = db.prepare(
-      `INSERT INTO discussions (project_id, author_id, title, body, category)
-       VALUES (?, ?, ?, ?, ?)`
-    ).run(project_id, req.user.id, title, body || '', category || 'general');
-
-    logActivity(req.user.id, 'create', 'discussion', result.lastInsertRowid, `Started discussion: ${title}`);
-    res.status(201).json({ id: result.lastInsertRowid, message: 'Discussion created' });
+    const { project_id, title, content, tags } = req.body;
+    const discussion = await Discussion.create({
+      project_id, author_id: req.user.id, title, content: content || '',
+      tags: tags || [],
+    });
+    logActivity(req.user.id, 'create', 'discussion', discussion._id, `Created discussion "${title}"`);
+    res.status(201).json({ id: discussion._id, message: 'Discussion created' });
   } catch (err) {
     next(err);
   }
 }
 
-export function addReply(req, res, next) {
+export async function getDiscussion(req, res, next) {
   try {
-    const db = getDatabase();
+    const discussion = await Discussion.findById(req.params.id)
+      .populate('author_id', 'name username')
+      .populate('project_id', 'name');
+    if (!discussion) return res.status(404).json({ error: 'Not found' });
+
+    const replies = await DiscussionReply.find({ discussion_id: discussion._id })
+      .populate('author_id', 'name username')
+      .sort({ created_at: 1 });
+
+    res.json({
+      discussion: {
+        ...discussion.toObject(), author_name: discussion.author_id?.name,
+        author_username: discussion.author_id?.username, tags: discussion.tags || [],
+      },
+      replies: replies.map(r => ({
+        ...r.toObject(), author_name: r.author_id?.name, author_username: r.author_id?.username,
+      })),
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function addReply(req, res, next) {
+  try {
     const { content } = req.body;
-    const result = db.prepare(
-      `INSERT INTO discussion_replies (discussion_id, author_id, content) VALUES (?, ?, ?)`
-    ).run(req.params.id, req.user.id, content);
+    const discussion = await Discussion.findById(req.params.id);
+    if (!discussion) return res.status(404).json({ error: 'Discussion not found' });
 
-    db.prepare('UPDATE discussions SET replies_count = replies_count + 1 WHERE id = ?').run(req.params.id);
-    logActivity(req.user.id, 'reply', 'discussion', req.params.id, 'Replied to discussion');
-    res.status(201).json({ id: result.lastInsertRowid, message: 'Reply added' });
-  } catch (err) {
-    next(err);
-  }
-}
-
-export function likeDiscussion(req, res, next) {
-  try {
-    const db = getDatabase();
-    db.prepare('UPDATE discussions SET views_count = views_count + 1 WHERE id = ?').run(req.params.id);
-    res.json({ message: 'Viewed' });
+    const reply = await DiscussionReply.create({
+      discussion_id: discussion._id, author_id: req.user.id, content,
+    });
+    await Discussion.findByIdAndUpdate(discussion._id, { $inc: { replies_count: 1 }, updated_at: new Date() });
+    logActivity(req.user.id, 'reply', 'discussion', discussion._id, `Replied to discussion #${req.params.id}`);
+    res.status(201).json({ id: reply._id, message: 'Reply added' });
   } catch (err) {
     next(err);
   }

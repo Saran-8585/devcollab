@@ -1,32 +1,20 @@
 import { Router } from 'express';
-import { getDatabase } from '../db/database.js';
-import auth from '../middleware/auth.js';
+import ActivityLog from '../models/ActivityLog.js';
+import { auth } from '../middleware/auth.js';
 
 const router = Router();
 
-router.get('/:entityType/:entityId', auth, (req, res, next) => {
+router.get('/', auth, async (req, res) => {
   try {
-    const db = getDatabase();
-    const { entityType, entityId } = req.params;
-
-    const validTypes = ['project', 'snippet', 'task', 'pull_request', 'discussion', 'user'];
-    if (!validTypes.includes(entityType)) {
-      return res.status(400).json({ error: 'Invalid entity type' });
-    }
-
-    const entries = db.prepare(
-      `SELECT al.id, al.action_type, al.description, al.created_at,
-              al.user_id, u.name as user_name, u.username as user_username
-       FROM activity_log al
-       JOIN users u ON al.user_id = u.id
-       WHERE al.entity_type = ? AND al.entity_id = ?
-       ORDER BY al.created_at DESC
-       LIMIT 20`
-    ).all(entityType, parseInt(entityId));
-
-    res.json({ entries });
+    const { limit = 50, offset = 0 } = req.query;
+    const activities = await ActivityLog.find({ user_id: req.user.id })
+      .sort({ created_at: -1 })
+      .skip(parseInt(offset))
+      .limit(parseInt(limit));
+    const total = await ActivityLog.countDocuments({ user_id: req.user.id });
+    res.json({ activities, total });
   } catch (err) {
-    next(err);
+    res.status(500).json({ error: err.message });
   }
 });
 

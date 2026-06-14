@@ -1,82 +1,113 @@
-import { getDatabase } from '../db/database.js';
+import PullRequest from '../models/PullRequest.js';
+import PRComment from '../models/PRComment.js';
+import Project from '../models/Project.js';
+import ProjectCollaborator from '../models/ProjectCollaborator.js';
 import { logActivity } from '../utils/activityLogger.js';
 
-export function getProjectPRs(req, res, next) {
+export async function listPRs(req, res, next) {
   try {
-    const db = getDatabase();
-    const prs = db.prepare(
-      `SELECT pr.*, u.name as author_name, u.username as author_username,
-       (SELECT COUNT(*) FROM pr_comments WHERE pr_id = pr.id) as comments_count
-       FROM pull_requests pr JOIN users u ON pr.opened_by = u.id
-       WHERE pr.project_id = ? ORDER BY pr.created_at DESC`
-    ).all(req.params.projectId);
-    res.json({ pullRequests: prs });
+    const { projectId, status } = req.query;
+    const filter = {};
+    if (projectId) filter.project_id = projectId;
+    if (status && status !== 'all') filter.status = status;
+
+    const prs = await PullRequest.find(filter)
+      .populate('opened_by', 'name username')
+      .populate('project_id', 'name')
+      .sort({ created_at: -1 });
+
+    res.json({
+      pullRequests: prs.map(pr => ({
+        ...pr.toObject(), author_name: pr.opened_by?.name, author_username: pr.opened_by?.username,
+        project_name: pr.project_id?.name,
+      })),
+    });
   } catch (err) {
     next(err);
   }
 }
 
-export function getPR(req, res, next) {
+export async function createPR(req, res, next) {
   try {
-    const db = getDatabase();
-    const pr = db.prepare(
-      `SELECT pr.*, u.name as author_name, u.username as author_username
-       FROM pull_requests pr JOIN users u ON pr.opened_by = u.id WHERE pr.id = ?`
-    ).get(req.params.id);
+    const { project_id, title, description, source_branch, target_branch } = req.body;
+    const project = await Project.findById(project_id);
+    if (!project) return res.status(404).json({ error: 'Project not found' });
 
+    const isMember = await ProjectCollaborator.findOne({ project_id, user_id: req.user.id });
+    if (!isMember && project.owner_id.toString() !== req.user.id) {
+      return res.status(403).json({ error: 'Not a collaborator' });
+    }
+
+    const pr = await PullRequest.create({
+      project_id, title, description: description || '',
+      source_branch: source_branch || 'main', target_branch: target_branch || 'main',
+      opened_by: req.user.id, status: 'open',
+    });
+    logActivity(req.user.id, 'create', 'pr', pr._id, `Opened PR "${title}"`);
+    res.status(201).json({ id: pr._id, message: 'PR created' });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function getPR(req, res, next) {
+  try {
+    const pr = await PullRequest.findById(req.params.id)
+      .populate('opened_by', 'name username')
+      .populate('project_id', 'name owner_id');
     if (!pr) return res.status(404).json({ error: 'Not found' });
 
-    const comments = db.prepare(
-      `SELECT pc.*, u.name as author_name, u.username as author_username
-       FROM pr_comments pc JOIN users u ON pc.user_id = u.id
-       WHERE pc.pr_id = ? ORDER BY pc.created_at`
-    ).all(pr.id);
+    const comments = await PRComment.find({ pr_id: pr._id })
+      .populate('user_id', 'name username')
+      .sort({ created_at: 1 });
 
-    res.json({ pullRequest: pr, comments });
+    res.json({
+      pullRequest: {
+        ...pr.toObject(), author_name: pr.opened_by?.name, author_username: pr.opened_by?.username,
+        project_name: pr.project_id?.name,
+      },
+      comments: comments.map(c => ({
+        ...c.toObject(), author_name: c.user_id?.name, author_username: c.user_id?.username,
+      })),
+    });
   } catch (err) {
     next(err);
   }
 }
 
-export function createPR(req, res, next) {
+export async function updatePR(req, res, next) {
   try {
-    const db = getDatabase();
-    const { project_id, title, description, from_branch, to_branch, code_diff } = req.body;
-    const result = db.prepare(
-      `INSERT INTO pull_requests (project_id, opened_by, title, description, from_branch, to_branch, code_diff)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`
-    ).run(project_id, req.user.id, title, description || '', from_branch || 'feature', to_branch || 'main', code_diff || '');
+    const pr = await PullRequest.findById(req.params.id);
+    if (!pr) return res.status(404).json({ error: 'Not found' });
+    if (pr.opened_by.toString() !== req.user.id) return res.status(403).json({ error: 'Not authorized' });
 
-    logActivity(req.user.id, 'create', 'pull_request', result.lastInsertRowid, `Opened PR: ${title}`);
-    res.status(201).json({ id: result.lastInsertRowid, message: 'PR created' });
+    const { title, description, status, source_branch, target_branch } = req.body;
+    const update = {};
+    if (title !== undefined) update.title = title;
+    if (description !== undefined) update.description = description;
+    if (status !== undefined) update.status = status;
+    if (source_branch !== undefined) update.source_branch = source_branch;
+    if (target_branch !== undefined) update.target_branch = target_branch;
+
+    await PullRequest.findByIdAndUpdate(req.params.id, { $set: update, updated_at: new Date() });
+    logActivity(req.user.id, 'update', 'pr', null, `Updated PR #${req.params.id}`);
+    res.json({ message: 'PR updated' });
   } catch (err) {
     next(err);
   }
 }
 
-export function updatePRStatus(req, res, next) {
+export async function addComment(req, res, next) {
   try {
-    const db = getDatabase();
-    const { status } = req.body;
-    db.prepare('UPDATE pull_requests SET status = ?, updated_at = datetime(\'now\') WHERE id = ?').run(status, req.params.id);
-    logActivity(req.user.id, 'update', 'pull_request', req.params.id, `PR status: ${status}`);
-    res.json({ message: 'Status updated' });
-  } catch (err) {
-    next(err);
-  }
-}
+    const { content } = req.body;
+    const pr = await PullRequest.findById(req.params.id);
+    if (!pr) return res.status(404).json({ error: 'PR not found' });
 
-export function addPRComment(req, res, next) {
-  try {
-    const db = getDatabase();
-    const { line_reference, content, review_status } = req.body;
-    const result = db.prepare(
-      `INSERT INTO pr_comments (pr_id, user_id, line_reference, content, review_status)
-       VALUES (?, ?, ?, ?, ?)`
-    ).run(req.params.id, req.user.id, line_reference || null, content, review_status || 'pending');
-
-    logActivity(req.user.id, 'comment', 'pull_request', req.params.id, 'Reviewed PR');
-    res.status(201).json({ id: result.lastInsertRowid, message: 'Comment added' });
+    const comment = await PRComment.create({
+      pr_id: pr._id, user_id: req.user.id, content,
+    });
+    logActivity(req.user.id, 'comment', 'pr', pr._id, `Commented on PR #${req.params.id}`);
+    res.status(201).json({ id: comment._id, message: 'Comment added' });
   } catch (err) {
     next(err);
   }

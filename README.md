@@ -1,12 +1,12 @@
 # DevCollab — Smart Developer Collaboration Platform
 
-A GitHub-inspired developer collaboration platform built with React, Node.js, Express, and SQLite.
+A GitHub-inspired developer collaboration platform built with React, Node.js, Express, and MongoDB.
 
 ## Tech Stack
 
 - **Frontend:** React 18, Vite, Tailwind CSS, Recharts
 - **Backend:** Node.js, Express.js (REST API)
-- **Database:** SQLite via better-sqlite3
+- **Database:** MongoDB via Mongoose ODM
 - **Auth:** JWT (localStorage)
 - **Code Highlighting:** react-syntax-highlighter
 - **Icons:** Lucide React
@@ -16,9 +16,9 @@ A GitHub-inspired developer collaboration platform built with React, Node.js, Ex
 ### Prerequisites
 - Node.js >= 18
 - npm >= 9
+- MongoDB >= 7.0 (running on `localhost:27017`)
 
-
-### 1. Install & Seed Database
+### 1. Install Dependencies & Seed Database
 
 ```bash
 # Install server dependencies
@@ -52,12 +52,9 @@ Navigate to **http://localhost:5173**
 
 ## Seed Credentials
 
-| Role | Email | Password |
-|------|-------|----------|
-| Admin | admin@devcollab.com | admin123 |
-| Dev 1 | dev1@devcollab.com | dev123 |
-| Dev 2 | dev2@devcollab.com | dev123 |
-| Dev 3-15 | dev3@devcollab.com – dev15@devcollab.com | dev123 |
+| Email | Password |
+|-------|----------|
+| demo@example.com | password123 |
 
 ## Environment Variables
 
@@ -65,6 +62,7 @@ Navigate to **http://localhost:5173**
 ```
 PORT=5000
 JWT_SECRET=devcollab-super-secret-key-2024
+MONGO_URI=mongodb://127.0.0.1:27017/devcollab
 ```
 
 ### Client (.env)
@@ -75,11 +73,10 @@ VITE_API_URL=http://localhost:5000/api
 ## Features
 
 - **Authentication** — Register/Login with JWT
-- **Explore Page** — Featured projects, trending snippets, top developers
-- **Developer Profiles** — Activity heatmap, language stats, pinned projects
-- **Project Management** — Kanban tasks, code snippets, PRs, discussions
-- **Code Snippets** — Post, share, and discover code
-- **Pull Requests** — Two-panel diff viewer, human reviews
+- **Developer Profiles** — Activity feed, projects, snippets, follow/unfollow
+- **Project Management** — Kanban tasks, code snippets, PRs, threaded discussions
+- **Code Snippets** — Post, share, like, and discover code
+- **Pull Requests** — Two-panel diff viewer, comments
 - **Developer Dashboard** — Activity tracking, task management, project overview
 - **Global Discussions** — Cross-project threaded discussions
 - **Admin Dashboard** — User management, content moderation, platform stats
@@ -96,9 +93,10 @@ devcollab/
 │       ├── pages/             # All route pages
 │       └── utils/             # Constants, helpers
 ├── server/                    # Express backend
-│   ├── controllers/           # Route handlers
-│   ├── db/                    # SQLite database + seed
+│   ├── controllers/           # Route handlers (async Mongoose)
+│   ├── db/                    # Database connection + seed script
 │   ├── middleware/            # Auth middleware
+│   ├── models/                # 13 Mongoose schemas
 │   ├── routes/                # Express routes
 │   └── utils/                 # Error handling, activity logger
 └── README.md
@@ -114,8 +112,6 @@ devcollab/
 | Tasks | GET/POST /api/tasks, PATCH /api/tasks/:id/status, PUT/DELETE |
 | Snippets | CRUD /api/snippets, POST /api/snippets/:id/like |
 | PRs | GET/POST /api/prs, PATCH /api/prs/:id/status, POST /comments |
-| Discussions | GET/POST /api/discussions, POST /:id/replies, /:id/like |
-| Dashboard | GET /api/dashboard, /dashboard/tasks, /dashboard/activity |
-| Admin | GET /api/admin/stats, /users, /flags, PATCH /suspend, /flags/:id |
-
-
+| Discussions | GET/POST /api/discussions, POST /:id/replies |
+| Dashboard | GET /api/dashboard, /dashboard/activity |
+| Admin | GET /api/admin/stats, /users, PATCH /role, /suspend |

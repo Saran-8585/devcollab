@@ -1,10 +1,11 @@
-import { getDatabase } from '../db/database.js';
+import ActivityLog from '../models/ActivityLog.js';
 
-export function logActivity(userId, actionType, entityType, entityId, description) {
-  const db = getDatabase();
-  const stmt = db.prepare(
-    `INSERT INTO activity_log (user_id, action_type, entity_type, entity_id, description)
-     VALUES (?, ?, ?, ?, ?)`
-  );
-  stmt.run(userId, actionType, entityType, entityId || null, description);
+export async function logActivity(userId, actionType, entityType, entityId, description) {
+  await ActivityLog.create({
+    user_id: userId,
+    action_type: actionType,
+    entity_type: entityType,
+    entity_id: entityId || null,
+    description: description || '',
+  });
 }

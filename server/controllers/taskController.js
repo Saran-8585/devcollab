@@ -1,87 +1,90 @@
-import { getDatabase } from '../db/database.js';
+import Task from '../models/Task.js';
+import Project from '../models/Project.js';
 import { logActivity } from '../utils/activityLogger.js';
 
-export function getProjectTasks(req, res, next) {
+export async function listTasks(req, res, next) {
   try {
-    const db = getDatabase();
-    const tasks = db.prepare(
-      `SELECT t.*, u.name as assignee_name, u.username as assignee_username
-       FROM tasks t LEFT JOIN users u ON t.assignee_id = u.id
-       WHERE t.project_id = ? ORDER BY t.created_at DESC`
-    ).all(req.params.projectId);
-    tasks.forEach(t => { t.labels = JSON.parse(t.labels || '[]'); });
-    res.json({ tasks });
+    const { projectId, status, assignee, priority } = req.query;
+    const filter = {};
+    if (projectId) filter.project_id = projectId;
+    if (status && status !== 'all') filter.status = status;
+    if (assignee) filter.assignee_id = assignee;
+    if (priority && priority !== 'all') filter.priority = priority;
+
+    const tasks = await Task.find(filter)
+      .populate('assignee_id', 'name username')
+      .populate('project_id', 'name')
+      .sort({ created_at: -1 });
+
+    res.json({ tasks: tasks.map(t => {
+      const obj = t.toObject();
+      obj.assignee_name = t.assignee_id?.name;
+      obj.assignee_username = t.assignee_id?.username;
+      obj.project_name = t.project_id?.name;
+      delete obj.assignee_id;
+      delete obj.project_id;
+      return obj;
+    }) });
   } catch (err) {
     next(err);
   }
 }
 
-export function createTask(req, res, next) {
+export async function createTask(req, res, next) {
   try {
-    const db = getDatabase();
-    const { project_id, title, description, priority, labels, assignee_id, due_date } = req.body;
-    const labelsJson = JSON.stringify(labels || []);
+    const { title, description, project_id, assignee_id, priority, status, tags, due_date } = req.body;
+    const project = await Project.findById(project_id);
+    if (!project) return res.status(404).json({ error: 'Project not found' });
+    if (project.owner_id.toString() !== req.user.id) return res.status(403).json({ error: 'Not authorized' });
 
-    const result = db.prepare(
-      `INSERT INTO tasks (project_id, title, description, priority, labels, assignee_id, created_by, due_date)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
-    ).run(project_id, title, description || '', priority || 'Medium', labelsJson, assignee_id || null, req.user.id, due_date || null);
-
-    logActivity(req.user.id, 'create', 'task', result.lastInsertRowid, `Created task: ${title}`);
-    res.status(201).json({ id: result.lastInsertRowid, message: 'Task created' });
+    const task = await Task.create({
+      project_id, title, description: description || '', assignee_id: assignee_id || null,
+      priority: priority || 'medium', status: status || 'open', tags: tags || [], due_date: due_date || null,
+    });
+    await Project.findByIdAndUpdate(project_id, { $inc: { tasks_count: 1 }, updated_at: new Date() });
+    logActivity(req.user.id, 'create', 'task', task._id, `Created task "${title}"`);
+    res.status(201).json({ id: task._id, message: 'Task created' });
   } catch (err) {
     next(err);
   }
 }
 
-export function updateTaskStatus(req, res, next) {
+export async function updateTask(req, res, next) {
   try {
-    const db = getDatabase();
-    const { status } = req.body;
-    db.prepare('UPDATE tasks SET status = ?, updated_at = datetime(\'now\') WHERE id = ?').run(status, req.params.id);
-    logActivity(req.user.id, 'update', 'task', req.params.id, `Moved task to ${status}`);
-    res.json({ message: 'Status updated' });
-  } catch (err) {
-    next(err);
-  }
-}
+    const task = await Task.findById(req.params.id);
+    if (!task) return res.status(404).json({ error: 'Not found' });
 
-export function updateTask(req, res, next) {
-  try {
-    const db = getDatabase();
-    const { title, description, priority, labels, assignee_id, due_date, status } = req.body;
-    const labelsJson = labels ? JSON.stringify(labels) : undefined;
+    const project = await Project.findById(task.project_id);
+    if (!project || project.owner_id.toString() !== req.user.id) return res.status(403).json({ error: 'Not authorized' });
 
-    db.prepare(
-      `UPDATE tasks SET
-        title = COALESCE(?, title), description = COALESCE(?, description),
-        priority = COALESCE(?, priority), labels = COALESCE(?, labels),
-        assignee_id = COALESCE(?, assignee_id), due_date = COALESCE(?, due_date),
-        status = COALESCE(?, status), updated_at = datetime('now')
-       WHERE id = ?`
-    ).run(title, description, priority, labelsJson, assignee_id, due_date, status, req.params.id);
+    const { title, description, status, priority, assignee_id, tags, due_date } = req.body;
+    const update = {};
+    if (title !== undefined) update.title = title;
+    if (description !== undefined) update.description = description;
+    if (status !== undefined) update.status = status;
+    if (priority !== undefined) update.priority = priority;
+    if (assignee_id !== undefined) update.assignee_id = assignee_id;
+    if (tags !== undefined) update.tags = tags;
+    if (due_date !== undefined) update.due_date = due_date;
 
-    const fields = [];
-    if (title !== undefined) fields.push('title');
-    if (description !== undefined) fields.push('description');
-    if (priority !== undefined) fields.push('priority');
-    if (labels !== undefined) fields.push('labels');
-    if (assignee_id !== undefined) fields.push('assignee');
-    if (due_date !== undefined) fields.push('due date');
-    if (status !== undefined) fields.push('status');
-    const desc = 'Updated task' + (fields.length ? ': ' + fields.join(', ') : '');
-    logActivity(req.user.id, 'update', 'task', req.params.id, desc);
+    await Task.findByIdAndUpdate(req.params.id, { $set: update, updated_at: new Date() });
+    logActivity(req.user.id, 'update', 'task', null, `Updated task #${req.params.id}`);
     res.json({ message: 'Task updated' });
   } catch (err) {
     next(err);
   }
 }
 
-export function deleteTask(req, res, next) {
+export async function deleteTask(req, res, next) {
   try {
-    const db = getDatabase();
-    db.prepare('DELETE FROM tasks WHERE id = ?').run(req.params.id);
-    logActivity(req.user.id, 'delete', 'task', req.params.id, 'Deleted task');
+    const task = await Task.findById(req.params.id);
+    if (!task) return res.status(404).json({ error: 'Not found' });
+    const project = await Project.findById(task.project_id);
+    if (!project || project.owner_id.toString() !== req.user.id) return res.status(403).json({ error: 'Not authorized' });
+
+    await Task.findByIdAndDelete(req.params.id);
+    await Project.findByIdAndUpdate(task.project_id, { $inc: { tasks_count: -1 }, updated_at: new Date() });
+    logActivity(req.user.id, 'delete', 'task', null, `Deleted task #${req.params.id}`);
     res.json({ message: 'Task deleted' });
   } catch (err) {
     next(err);

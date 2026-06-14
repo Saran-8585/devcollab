@@ -1,143 +1,127 @@
-import { getDatabase } from '../db/database.js';
+import Snippet from '../models/Snippet.js';
+import SnippetLike from '../models/SnippetLike.js';
+import Project from '../models/Project.js';
 import { logActivity } from '../utils/activityLogger.js';
 
-export function listSnippets(req, res, next) {
+export async function listSnippets(req, res, next) {
   try {
-    const db = getDatabase();
-    const { language, search, sort } = req.query;
-    let query = `SELECT s.*, u.name as author_name, u.username as author_username
-      FROM snippets s JOIN users u ON s.user_id = u.id
-      WHERE s.visibility = 'public'`;
-    const params = [];
-
-    if (language && language !== 'all') {
-      query += ' AND s.language = ?';
-      params.push(language);
-    }
+    const { language, sort, search } = req.query;
+    const filter = { visibility: 'public' };
+    if (language && language !== 'all') filter.language = language;
     if (search) {
-      query += ' AND (s.title LIKE ? OR s.tags LIKE ?)';
-      params.push(`%${search}%`, `%${search}%`);
+      filter.$or = [
+        { title: { $regex: search, $options: 'i' } },
+        { description: { $regex: search, $options: 'i' } },
+      ];
     }
+    const sortMap = { likes: { likes_count: -1 }, newest: { created_at: -1 }, updated: { updated_at: -1 } };
+    const sortOpt = sortMap[sort] || sortMap.newest;
 
-    const sortMap = { likes: 'ORDER BY s.likes_count DESC', newest: 'ORDER BY s.created_at DESC' };
-    query += ' ' + (sortMap[sort] || sortMap.newest);
-    query += ' LIMIT 50';
-
-    const snippets = db.prepare(query).all(...params);
-    snippets.forEach(s => { s.tags = JSON.parse(s.tags || '[]'); });
-    res.json({ snippets });
+    const snippets = await Snippet.find(filter).populate('user_id', 'name username').sort(sortOpt).limit(50);
+    res.json({
+      snippets: snippets.map(s => ({
+        ...s.toObject(), author_name: s.user_id?.name, author_username: s.user_id?.username,
+      })),
+    });
   } catch (err) {
     next(err);
   }
 }
 
-export function getSnippet(req, res, next) {
+export async function createSnippet(req, res, next) {
   try {
-    const db = getDatabase();
-    const snippet = db.prepare(
-      `SELECT s.*, u.name as author_name, u.username as author_username, u.primary_language
-       FROM snippets s JOIN users u ON s.user_id = u.id WHERE s.id = ?`
-    ).get(req.params.id);
+    const { title, description, language, code, tags, visibility, project_id } = req.body;
+    const snippet = await Snippet.create({
+      user_id: req.user.id, title, description: description || '',
+      language: language || 'javascript', code, tags: tags || [],
+      visibility: visibility || 'public', project_id: project_id || null,
+    });
+    logActivity(req.user.id, 'create', 'snippet', snippet._id, `Created snippet "${title}"`);
+    res.status(201).json({ id: snippet._id, message: 'Snippet created' });
+  } catch (err) {
+    next(err);
+  }
+}
 
+export async function getSnippet(req, res, next) {
+  try {
+    const snippet = await Snippet.findById(req.params.id).populate('user_id', 'name username');
     if (!snippet) return res.status(404).json({ error: 'Not found' });
-    snippet.tags = JSON.parse(snippet.tags || '[]');
-
-    db.prepare('UPDATE snippets SET views_count = views_count + 1 WHERE id = ?').run(snippet.id);
-
-    const comments = db.prepare(
-      `SELECT dr.*, u.name as author_name, u.username as author_username
-       FROM discussion_replies dr JOIN users u ON dr.author_id = u.id
-       WHERE dr.discussion_id = ? ORDER BY dr.created_at`
-    ).all(snippet.id);
-
-    res.json({ snippet, comments });
-  } catch (err) {
-    next(err);
-  }
-}
-
-export function createSnippet(req, res, next) {
-  try {
-    const db = getDatabase();
-    const { title, description, language, code_content, tags, visibility, project_id } = req.body;
-    const tagsJson = JSON.stringify(tags || []);
-
-    const result = db.prepare(
-      `INSERT INTO snippets (user_id, project_id, title, description, language, code_content, tags, visibility)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
-    ).run(req.user.id, project_id || null, title, description || '', language || 'JavaScript', code_content, tagsJson, visibility || 'public');
-
-    logActivity(req.user.id, 'create', 'snippet', result.lastInsertRowid, `Posted snippet: ${title}`);
-    res.status(201).json({ id: result.lastInsertRowid, message: 'Snippet created' });
-  } catch (err) {
-    next(err);
-  }
-}
-
-export function updateSnippet(req, res, next) {
-  try {
-    const db = getDatabase();
-    const snippet = db.prepare('SELECT * FROM snippets WHERE id = ?').get(req.params.id);
-    if (!snippet || snippet.user_id !== req.user.id) {
-      return res.status(403).json({ error: 'Not authorized' });
+    if (snippet.visibility === 'private' && snippet.user_id._id.toString() !== req.user?.id) {
+      return res.status(403).json({ error: 'Private snippet' });
     }
 
-    const { title, description, language, code_content, tags, visibility } = req.body;
-    const tagsJson = tags ? JSON.stringify(tags) : undefined;
+    let hasLiked = false;
+    if (req.user) {
+      const like = await SnippetLike.findOne({ snippet_id: snippet._id, user_id: req.user.id });
+      hasLiked = !!like;
+    }
 
-    db.prepare(
-      `UPDATE snippets SET
-        title = COALESCE(?, title), description = COALESCE(?, description),
-        language = COALESCE(?, language), code_content = COALESCE(?, code_content),
-        tags = COALESCE(?, tags), visibility = COALESCE(?, visibility)
-       WHERE id = ?`
-    ).run(title, description, language, code_content, tagsJson, visibility, req.params.id);
+    res.json({ snippet: { ...snippet.toObject(), author_name: snippet.user_id?.name, author_username: snippet.user_id?.username }, hasLiked });
+  } catch (err) {
+    next(err);
+  }
+}
 
-    const fields = [];
-    if (title !== undefined) fields.push('title');
-    if (description !== undefined) fields.push('description');
-    if (language !== undefined) fields.push('language');
-    if (code_content !== undefined) fields.push('code');
-    if (tags !== undefined) fields.push('tags');
-    if (visibility !== undefined) fields.push('visibility');
-    const desc = 'Updated snippet' + (fields.length ? ': ' + fields.join(', ') : '');
-    logActivity(req.user.id, 'update', 'snippet', snippet.id, desc);
+export async function updateSnippet(req, res, next) {
+  try {
+    const snippet = await Snippet.findById(req.params.id);
+    if (!snippet) return res.status(404).json({ error: 'Not found' });
+    if (snippet.user_id.toString() !== req.user.id) return res.status(403).json({ error: 'Not authorized' });
+
+    const { title, description, language, code, tags, visibility } = req.body;
+    const update = {};
+    if (title !== undefined) update.title = title;
+    if (description !== undefined) update.description = description;
+    if (language !== undefined) update.language = language;
+    if (code !== undefined) update.code = code;
+    if (tags !== undefined) update.tags = tags;
+    if (visibility !== undefined) update.visibility = visibility;
+
+    await Snippet.findByIdAndUpdate(req.params.id, { $set: update, updated_at: new Date() });
+    logActivity(req.user.id, 'update', 'snippet', null, `Updated snippet #${req.params.id}`);
     res.json({ message: 'Snippet updated' });
   } catch (err) {
     next(err);
   }
 }
 
-export function deleteSnippet(req, res, next) {
+export async function deleteSnippet(req, res, next) {
   try {
-    const db = getDatabase();
-    const snippet = db.prepare('SELECT * FROM snippets WHERE id = ?').get(req.params.id);
-    if (!snippet || snippet.user_id !== req.user.id) {
-      return res.status(403).json({ error: 'Not authorized' });
-    }
-    db.prepare('DELETE FROM snippets WHERE id = ?').run(req.params.id);
-    logActivity(req.user.id, 'delete', 'snippet', snippet.id, 'Deleted snippet');
+    const snippet = await Snippet.findById(req.params.id);
+    if (!snippet) return res.status(404).json({ error: 'Not found' });
+    if (snippet.user_id.toString() !== req.user.id) return res.status(403).json({ error: 'Not authorized' });
+    await Snippet.findByIdAndDelete(req.params.id);
+    logActivity(req.user.id, 'delete', 'snippet', null, `Deleted snippet #${req.params.id}`);
     res.json({ message: 'Snippet deleted' });
   } catch (err) {
     next(err);
   }
 }
 
-export function likeSnippet(req, res, next) {
+export async function likeSnippet(req, res, next) {
   try {
-    const db = getDatabase();
-    const { id } = req.params;
-    const existing = db.prepare('SELECT id FROM snippet_likes WHERE snippet_id = ? AND user_id = ?').get(id, req.user.id);
-    if (existing) {
-      db.prepare('DELETE FROM snippet_likes WHERE snippet_id = ? AND user_id = ?').run(id, req.user.id);
-      db.prepare('UPDATE snippets SET likes_count = MAX(0, likes_count - 1) WHERE id = ?').run(id);
-      res.json({ liked: false });
-    } else {
-      db.prepare('INSERT INTO snippet_likes (snippet_id, user_id) VALUES (?, ?)').run(id, req.user.id);
-      db.prepare('UPDATE snippets SET likes_count = likes_count + 1 WHERE id = ?').run(id);
-      logActivity(req.user.id, 'like', 'snippet', id, 'Liked snippet');
-      res.json({ liked: true });
-    }
+    const snippet = await Snippet.findById(req.params.id);
+    if (!snippet) return res.status(404).json({ error: 'Not found' });
+    const existing = await SnippetLike.findOne({ snippet_id: snippet._id, user_id: req.user.id });
+    if (existing) return res.status(400).json({ error: 'Already liked' });
+
+    await SnippetLike.create({ snippet_id: snippet._id, user_id: req.user.id });
+    await Snippet.findByIdAndUpdate(snippet._id, { $inc: { likes_count: 1 } });
+    res.json({ message: 'Liked' });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function unlikeSnippet(req, res, next) {
+  try {
+    const snippet = await Snippet.findById(req.params.id);
+    if (!snippet) return res.status(404).json({ error: 'Not found' });
+    const result = await SnippetLike.deleteOne({ snippet_id: snippet._id, user_id: req.user.id });
+    if (result.deletedCount === 0) return res.status(400).json({ error: 'Not liked' });
+    await Snippet.findByIdAndUpdate(snippet._id, { $inc: { likes_count: -1 } });
+    res.json({ message: 'Unliked' });
   } catch (err) {
     next(err);
   }

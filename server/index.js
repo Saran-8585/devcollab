@@ -12,6 +12,7 @@ import aiRoutes from './routes/ai.js';
 import discussionRoutes from './routes/discussions.js';
 import dashboardRoutes from './routes/dashboard.js';
 import adminRoutes from './routes/admin.js';
+import activityRoutes from './routes/activity.js';
 import { errorHandler } from './utils/errors.js';
 
 const app = express();
@@ -32,6 +33,7 @@ app.use('/api/ai', aiRoutes);
 app.use('/api/discussions', discussionRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/activity', activityRoutes);
 
 app.use(errorHandler);
 

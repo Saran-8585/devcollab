@@ -93,7 +93,15 @@ export function updateSnippet(req, res, next) {
        WHERE id = ?`
     ).run(title, description, language, code_content, tagsJson, visibility, req.params.id);
 
-    logActivity(req.user.id, 'update', 'snippet', snippet.id, 'Updated snippet');
+    const fields = [];
+    if (title !== undefined) fields.push('title');
+    if (description !== undefined) fields.push('description');
+    if (language !== undefined) fields.push('language');
+    if (code_content !== undefined) fields.push('code');
+    if (tags !== undefined) fields.push('tags');
+    if (visibility !== undefined) fields.push('visibility');
+    const desc = 'Updated snippet' + (fields.length ? ': ' + fields.join(', ') : '');
+    logActivity(req.user.id, 'update', 'snippet', snippet.id, desc);
     res.json({ message: 'Snippet updated' });
   } catch (err) {
     next(err);

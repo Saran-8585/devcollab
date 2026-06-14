@@ -12,6 +12,7 @@ import { useToast } from '../components/ui/toast';
 import { formatDate, timeAgo } from '../utils/constants';
 import { Light as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { atomOneDark } from 'react-syntax-highlighter/dist/esm/styles/hljs';
+import EditHistory from '../components/EditHistory';
 
 export default function SnippetDetail() {
   const { id } = useParams();
@@ -160,6 +161,8 @@ export default function SnippetDetail() {
           </CardContent>
         </Card>
       )}
+
+      <EditHistory entityType="snippet" entityId={snippet.id} />
     </div>
   );
 }

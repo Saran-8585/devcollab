@@ -15,6 +15,7 @@ import Skeleton from '../components/ui/skeleton';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../components/ui/toast';
 import { formatDate, timeAgo, PRIORITIES, priorityColors, statusColors, categoryColors, labelColors, TASK_STATUSES } from '../utils/constants';
+import EditHistory from '../components/EditHistory';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Light as SyntaxHighlighter } from 'react-syntax-highlighter';
@@ -106,6 +107,7 @@ export default function ProjectDetail() {
               <ReactMarkdown remarkPlugins={[remarkGfm]}>{p.readme_content || '*No README yet*'}</ReactMarkdown>
             </CardContent>
           </Card>
+          <EditHistory entityType="project" entityId={p.id} />
         </div>
         <div className="space-y-4">
           <Card>

@@ -135,7 +135,15 @@ export function updateProject(req, res, next) {
        WHERE id = ?`
     ).run(name, description, visibility, primary_language, tagsJson, readme_content, req.params.id);
 
-    logActivity(req.user.id, 'update', 'project', project.id, `Updated project ${project.name}`);
+    const fields = [];
+    if (name !== undefined) fields.push('name');
+    if (description !== undefined) fields.push('description');
+    if (visibility !== undefined) fields.push('visibility');
+    if (primary_language !== undefined) fields.push('language');
+    if (tags !== undefined) fields.push('tags');
+    if (readme_content !== undefined) fields.push('README');
+    const desc = 'Updated project' + (fields.length ? ': ' + fields.join(', ') : '');
+    logActivity(req.user.id, 'update', 'project', project.id, desc);
     res.json({ message: 'Project updated' });
   } catch (err) {
     next(err);

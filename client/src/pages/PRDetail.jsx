@@ -11,6 +11,7 @@ import { useAuth } from '../context/AuthContext';
 import { useToast } from '../components/ui/toast';
 import { formatDate, statusColors, timeAgo } from '../utils/constants';
 import ReactMarkdown from 'react-markdown';
+import EditHistory from '../components/EditHistory';
 import { Light as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { atomOneDark } from 'react-syntax-highlighter/dist/esm/styles/hljs';
 
@@ -303,6 +304,8 @@ export default function PRDetail() {
           )}
         </CardContent>
       </Card>
+
+      <EditHistory entityType="pull_request" entityId={pullRequest.id} />
     </div>
   );
 }

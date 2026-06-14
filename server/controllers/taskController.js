@@ -61,7 +61,16 @@ export function updateTask(req, res, next) {
        WHERE id = ?`
     ).run(title, description, priority, labelsJson, assignee_id, due_date, status, req.params.id);
 
-    logActivity(req.user.id, 'update', 'task', req.params.id, 'Updated task');
+    const fields = [];
+    if (title !== undefined) fields.push('title');
+    if (description !== undefined) fields.push('description');
+    if (priority !== undefined) fields.push('priority');
+    if (labels !== undefined) fields.push('labels');
+    if (assignee_id !== undefined) fields.push('assignee');
+    if (due_date !== undefined) fields.push('due date');
+    if (status !== undefined) fields.push('status');
+    const desc = 'Updated task' + (fields.length ? ': ' + fields.join(', ') : '');
+    logActivity(req.user.id, 'update', 'task', req.params.id, desc);
     res.json({ message: 'Task updated' });
   } catch (err) {
     next(err);

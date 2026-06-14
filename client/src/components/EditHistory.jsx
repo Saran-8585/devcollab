@@ -25,8 +25,6 @@ export default function EditHistory({ entityType, entityId }) {
       like: 'Liked', comment: 'Reviewed', collaborate: 'Added collaborator',
       reply: 'Replied', follow: 'Followed', unfollow: 'Unfollowed',
       login: 'Logged in', register: 'Joined',
-      ai_review: 'AI reviewed', ai_explain: 'AI explained',
-      ai_fix: 'AI fixed', ai_generate: 'AI generated',
     };
     return labels[action] || action;
   };

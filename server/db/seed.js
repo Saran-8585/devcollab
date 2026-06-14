@@ -6,7 +6,7 @@ const db = initDatabase();
 function clearData() {
   const tables = [
     'flags', 'activity_log', 'snippet_likes', 'follows', 'discussion_replies',
-    'discussions', 'ai_reviews', 'pr_comments', 'pull_requests', 'snippets',
+    'discussions', 'pr_comments', 'pull_requests', 'snippets',
     'tasks', 'project_collaborators', 'projects', 'users'
   ];
   for (const t of tables) {
@@ -297,32 +297,6 @@ const codeDiffs = [
 + }, []);`,
 ];
 
-const aiReviewResults = [
-  {
-    overall_assessment: 'This pull request introduces meaningful improvements to error handling and data validation. The code is well-structured but has a few areas that need attention, particularly around SQL injection prevention and input sanitization.',
-    issues: [
-      { line_reference: 15, severity: 'critical', description: 'SQL query uses string interpolation instead of parameterized queries', fix_suggestion: 'Replace string concatenation with prepared statements using ? placeholders' },
-      { line_reference: 42, severity: 'warning', description: 'Unhandled promise rejection in async function', fix_suggestion: 'Add try-catch block around the async operation' },
-      { line_reference: 67, severity: 'suggestion', description: 'Consider using optional chaining for nested object access', fix_suggestion: 'Replace && chaining with optional chaining operator (?.)' },
-    ],
-    strengths: ['Well-organized function structure', 'Good use of early returns to reduce nesting', 'Comprehensive error messages'],
-    security_concerns: ['SQL injection vulnerability on line 15', 'User input not sanitized before database query'],
-    performance_notes: ['Consider adding database query caching for frequently accessed data', 'Large array operations could be optimized with lazy evaluation'],
-    overall_score: 7
-  },
-  {
-    overall_assessment: 'The code demonstrates good architectural patterns and follows best practices. The component separation is clean and the state management approach is appropriate for the scale of the application.',
-    issues: [
-      { line_reference: 23, severity: 'warning', description: 'Large useEffect dependency array may cause unnecessary re-renders', fix_suggestion: 'Split into multiple smaller effects or use useMemo' },
-      { line_reference: 89, severity: 'suggestion', description: 'Magic number used for timeout value', fix_suggestion: 'Extract to a named constant' },
-    ],
-    strengths: ['Clean component architecture', 'Comprehensive TypeScript types', 'Good error boundary usage', 'Consistent code style'],
-    security_concerns: [],
-    performance_notes: ['Memoize expensive computations with useMemo', 'Consider code-splitting for larger components'],
-    overall_score: 8
-  },
-];
-
 function seededRandom(seed) {
   let s = seed;
   return function() {
@@ -473,8 +447,8 @@ async function seed() {
 
   console.log('Creating pull requests...');
   const insertPR = db.prepare(
-    `INSERT INTO pull_requests (project_id, opened_by, title, description, from_branch, to_branch, code_diff, status, ai_review_id, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    `INSERT INTO pull_requests (project_id, opened_by, title, description, from_branch, to_branch, code_diff, status, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   );
 
   db.transaction(() => {
@@ -482,37 +456,14 @@ async function seed() {
       const projectId = (i % 20) + 1;
       const userId = (i % 15) + 2;
       const status = i < 20 ? 'open' : (i < 25 ? 'merged' : 'closed');
-      const aiReviewId = i < 10 ? (i % 2) + 1 : null;
       insertPR.run(
         projectId, userId, prTitles[i],
         `## Summary\n\nThis PR addresses ${prTitles[i].toLowerCase()}.\n\n## Changes\n- ${Math.floor(rand() * 5) + 1} files changed\n- ${Math.floor(rand() * 100) + 10} additions\n- ${Math.floor(rand() * 50)} deletions\n\n## Checklist\n- [x] Code compiles\n- [x] Tests pass\n- [x] Self-reviewed`,
         pick(['feature', 'fix', 'chore', 'refactor']),
         pick(['main', 'develop', 'master']),
         pick(codeDiffs),
-        status, aiReviewId,
+        status,
         daysAgo(Math.floor(rand() * 30)), hoursAgo(Math.floor(rand() * 720))
-      );
-    }
-  })();
-
-  console.log('Creating AI reviews...');
-  const insertAIReview = db.prepare(
-    `INSERT INTO ai_reviews (pr_id, user_id, context_type, overall_assessment, issues, strengths, security_concerns, performance_notes, overall_score, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-  );
-
-  db.transaction(() => {
-    for (let i = 0; i < 10; i++) {
-      const review = pick(aiReviewResults);
-      insertAIReview.run(
-        i + 1, (i % 15) + 2, 'pr_review',
-        review.overall_assessment,
-        JSON.stringify(review.issues),
-        JSON.stringify(review.strengths),
-        JSON.stringify(review.security_concerns),
-        JSON.stringify(review.performance_notes),
-        review.overall_score,
-        daysAgo(Math.floor(rand() * 20))
       );
     }
   })();

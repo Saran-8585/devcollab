@@ -12,8 +12,6 @@ import { useToast } from '../components/ui/toast';
 import { formatDate, statusColors, timeAgo } from '../utils/constants';
 import ReactMarkdown from 'react-markdown';
 import EditHistory from '../components/EditHistory';
-import { Light as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { atomOneDark } from 'react-syntax-highlighter/dist/esm/styles/hljs';
 
 export default function PRDetail() {
   const { id } = useParams();
@@ -21,8 +19,6 @@ export default function PRDetail() {
   const toast = useToast();
   const [pr, setPr] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [aiReview, setAiReview] = useState(null);
-  const [aiReviewing, setAiReviewing] = useState(false);
   const [comment, setComment] = useState('');
   const [reviewStatus, setReviewStatus] = useState('pending');
   const [lineRef, setLineRef] = useState('');
@@ -32,7 +28,6 @@ export default function PRDetail() {
     try {
       const res = await API.get(`/prs/${id}`);
       setPr(res.data);
-      if (res.data.aiReview) setAiReview(res.data.aiReview);
     } catch (err) {
       toast('Failed to load PR', 'error');
     } finally {
@@ -41,24 +36,6 @@ export default function PRDetail() {
   };
 
   useEffect(() => { fetchPR(); }, [id]);
-
-  const requestAiReview = async () => {
-    setAiReviewing(true);
-    try {
-      const res = await API.post('/ai/review-pr', {
-        pr_id: parseInt(id),
-        code_diff: pr.pullRequest.code_diff,
-        title: pr.pullRequest.title,
-        language: '',
-      });
-      setAiReview(res.data.review);
-      toast('AI review completed!', 'success');
-    } catch (err) {
-      toast('AI review failed', 'error');
-    } finally {
-      setAiReviewing(false);
-    }
-  };
 
   const addComment = async () => {
     if (!comment.trim()) return;
@@ -134,11 +111,6 @@ export default function PRDetail() {
           </p>
         </div>
         <div className="flex gap-2">
-          {!aiReview && pr.pullRequest.status === 'open' && (
-            <Button onClick={requestAiReview} disabled={aiReviewing}>
-              {aiReviewing ? 'Reviewing...' : '🤖 Request AI Review'}
-            </Button>
-          )}
           {pr.pullRequest.status === 'open' && (
             <Button variant="success" onClick={mergePR}>Merge PR</Button>
           )}
@@ -184,80 +156,6 @@ export default function PRDetail() {
           </div>
         </div>
       </Card>
-
-      {/* AI Review */}
-      {aiReview && (
-        <Card className="mb-6 border-primary/30">
-          <CardHeader>
-            <CardTitle className="text-sm flex items-center gap-2">
-              <span className="text-primary">🤖</span> AI Code Review
-              <Badge variant="secondary" className="ml-auto text-lg">{aiReview.overall_score}/10</Badge>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <p className="text-sm text-slate-300">{aiReview.overall_assessment}</p>
-
-            {aiReview.issues?.length > 0 && (
-              <div>
-                <h4 className="text-sm font-medium mb-2">Issues ({aiReview.issues.length})</h4>
-                <div className="space-y-2">
-                  {aiReview.issues.map((issue, i) => (
-                    <div key={i} className={`p-3 rounded-lg border text-sm ${
-                      issue.severity === 'critical' ? 'border-red-800 bg-red-950/20' :
-                      issue.severity === 'warning' ? 'border-amber-800 bg-amber-950/20' :
-                      'border-blue-800 bg-blue-950/20'
-                    }`}>
-                      <div className="flex items-center gap-2 mb-1">
-                        <Badge variant={issue.severity === 'critical' ? 'destructive' : issue.severity === 'warning' ? 'warning' : 'secondary'} className="text-xs">
-                          {issue.severity}
-                        </Badge>
-                        {issue.line_reference && <span className="text-xs text-slate-500">Line {issue.line_reference}</span>}
-                      </div>
-                      <p className="text-slate-300">{issue.description}</p>
-                      {issue.fix_suggestion && (
-                        <p className="text-xs text-primary mt-1">Fix: {issue.fix_suggestion}</p>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {aiReview.strengths?.length > 0 && (
-              <div>
-                <h4 className="text-sm font-medium mb-2 text-green-400">✅ Strengths</h4>
-                <ul className="space-y-1">
-                  {aiReview.strengths.map((s, i) => (
-                    <li key={i} className="text-sm text-slate-300">• {s}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {aiReview.security_concerns?.length > 0 && (
-              <div>
-                <h4 className="text-sm font-medium mb-2 text-red-400">🛡️ Security Concerns</h4>
-                <ul className="space-y-1">
-                  {aiReview.security_concerns.map((s, i) => (
-                    <li key={i} className="text-sm text-slate-300">• {s}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {aiReview.performance_notes?.length > 0 && (
-              <div>
-                <h4 className="text-sm font-medium mb-2 text-amber-400">⚡ Performance Notes</h4>
-                <ul className="space-y-1">
-                  {aiReview.performance_notes.map((s, i) => (
-                    <li key={i} className="text-sm text-slate-300">• {s}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
 
       {/* Human Reviews */}
       <Card>

@@ -85,12 +85,11 @@ export default function AdminDashboard() {
       {activeSection === 'overview' && (
         <div className="space-y-6">
           {/* Summary Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {[
               ['👨‍💻', 'Total Developers', stats?.stats.totalDevs, 'text-blue-400'],
               ['📁', 'Total Projects', stats?.stats.totalProjects, 'text-green-400'],
               ['📝', 'Total Snippets', stats?.stats.totalSnippets, 'text-amber-400'],
-              ['🤖', 'AI Reviews', stats?.stats.totalAIReviews, 'text-purple-400'],
             ].map(([icon, label, count, color]) => (
               <Card key={label}>
                 <CardContent className="p-4 flex items-center gap-4">
@@ -134,22 +133,6 @@ export default function AdminDashboard() {
               </CardContent>
             </Card>
 
-            <Card className="lg:col-span-2">
-              <CardHeader><CardTitle className="text-sm">AI Tool Usage (Daily)</CardTitle></CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={250}>
-                  <BarChart data={stats?.aiUsage || []}>
-                    <XAxis dataKey="date" tick={{ fill: '#94a3b8', fontSize: 11 }} />
-                    <YAxis tick={{ fill: '#94a3b8', fontSize: 11 }} />
-                    <Tooltip contentStyle={{ background: '#1e293b', border: '1px solid #334155', borderRadius: '8px' }} />
-                    <Bar dataKey="explain_count" name="Explain" stackId="a" fill="#3b82f6" radius={[2, 2, 0, 0]} />
-                    <Bar dataKey="fix_count" name="Fix" stackId="a" fill="#22c55e" radius={[2, 2, 0, 0]} />
-                    <Bar dataKey="generate_count" name="Generate" stackId="a" fill="#f59e0b" radius={[2, 2, 0, 0]} />
-                    <Bar dataKey="review_count" name="Review" stackId="a" fill="#8b5cf6" radius={[2, 2, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
           </div>
         </div>
       )}

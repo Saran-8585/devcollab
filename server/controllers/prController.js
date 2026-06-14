@@ -32,18 +32,7 @@ export function getPR(req, res, next) {
        WHERE pc.pr_id = ? ORDER BY pc.created_at`
     ).all(pr.id);
 
-    let aiReview = null;
-    if (pr.ai_review_id) {
-      aiReview = db.prepare('SELECT * FROM ai_reviews WHERE id = ?').get(pr.ai_review_id);
-      if (aiReview) {
-        aiReview.issues = JSON.parse(aiReview.issues || '[]');
-        aiReview.strengths = JSON.parse(aiReview.strengths || '[]');
-        aiReview.security_concerns = JSON.parse(aiReview.security_concerns || '[]');
-        aiReview.performance_notes = JSON.parse(aiReview.performance_notes || '[]');
-      }
-    }
-
-    res.json({ pullRequest: pr, comments, aiReview });
+    res.json({ pullRequest: pr, comments });
   } catch (err) {
     next(err);
   }

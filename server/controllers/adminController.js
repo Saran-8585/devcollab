@@ -6,7 +6,6 @@ export function getStats(req, res, next) {
     const totalDevs = db.prepare("SELECT COUNT(*) as count FROM users WHERE role = 'developer'").get();
     const totalProjects = db.prepare('SELECT COUNT(*) as count FROM projects').get();
     const totalSnippets = db.prepare('SELECT COUNT(*) as count FROM snippets').get();
-    const totalAIReviews = db.prepare('SELECT COUNT(*) as count FROM ai_reviews').get();
 
     const projectsByLanguage = db.prepare(
       'SELECT primary_language as language, COUNT(*) as count FROM projects GROUP BY primary_language ORDER BY count DESC'
@@ -17,22 +16,10 @@ export function getStats(req, res, next) {
       FROM users GROUP BY week ORDER BY week DESC LIMIT 12
     `).all();
 
-    const aiUsage = db.prepare(`
-      SELECT DATE(created_at) as date,
-        SUM(CASE WHEN action_type = 'ai_explain' THEN 1 ELSE 0 END) as explain_count,
-        SUM(CASE WHEN action_type = 'ai_fix' THEN 1 ELSE 0 END) as fix_count,
-        SUM(CASE WHEN action_type = 'ai_generate' THEN 1 ELSE 0 END) as generate_count,
-        SUM(CASE WHEN action_type = 'ai_review' THEN 1 ELSE 0 END) as review_count
-      FROM activity_log
-      WHERE action_type LIKE 'ai_%' AND created_at >= datetime('now', '-30 days')
-      GROUP BY DATE(created_at) ORDER BY date
-    `).all();
-
     res.json({
-      stats: { totalDevs: totalDevs.count, totalProjects: totalProjects.count, totalSnippets: totalSnippets.count, totalAIReviews: totalAIReviews.count },
+      stats: { totalDevs: totalDevs.count, totalProjects: totalProjects.count, totalSnippets: totalSnippets.count },
       projectsByLanguage,
       registrationsPerWeek: registrationsPerWeek.reverse(),
-      aiUsage,
     });
   } catch (err) {
     next(err);

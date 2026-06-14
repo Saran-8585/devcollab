@@ -12,7 +12,6 @@ import SnippetDetail from './pages/SnippetDetail';
 import SnippetNew from './pages/SnippetNew';
 import PRDetail from './pages/PRDetail';
 import PRNew from './pages/PRNew';
-import AIAssistant from './pages/AIAssistant';
 import Dashboard from './pages/Dashboard';
 import Discussions from './pages/Discussions';
 import AdminDashboard from './pages/AdminDashboard';
@@ -32,7 +31,6 @@ export default function App() {
           <Route path="/snippets/new" element={<ProtectedRoute><SnippetNew /></ProtectedRoute>} />
           <Route path="/pr/:id" element={<ProtectedRoute><PRDetail /></ProtectedRoute>} />
           <Route path="/pr/new" element={<ProtectedRoute><PRNew /></ProtectedRoute>} />
-          <Route path="/ai-assistant" element={<ProtectedRoute><AIAssistant /></ProtectedRoute>} />
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
           <Route path="/discussions" element={<Discussions />} />
           <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />

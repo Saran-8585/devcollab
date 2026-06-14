@@ -7,7 +7,6 @@ const navLinks = [
   { path: '/', label: 'Explore', icon: '🔍' },
   { path: '/snippets', label: 'Snippets', icon: '📝' },
   { path: '/discussions', label: 'Discussions', icon: '💬' },
-  { path: '/ai-assistant', label: 'AI Assistant', icon: '🤖' },
 ];
 
 export default function Navbar() {
@@ -18,7 +17,6 @@ export default function Navbar() {
   const userItems = [
     { label: 'Dashboard', onClick: () => navigate('/dashboard'), icon: '📊' },
     { label: 'My Snippets', onClick: () => navigate('/snippets'), icon: '📝' },
-    { label: 'AI Assistant', onClick: () => navigate('/ai-assistant'), icon: '🤖' },
     ...(user?.role === 'admin' ? [{ label: 'Admin Panel', onClick: () => navigate('/admin'), icon: '⚙️' }] : []),
     { separator: true },
     { label: 'Sign Out', onClick: () => { logout(); navigate('/'); }, icon: '🚪' },

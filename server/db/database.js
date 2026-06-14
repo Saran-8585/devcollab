@@ -115,7 +115,6 @@ function createTables() {
       to_branch TEXT DEFAULT 'main',
       code_diff TEXT DEFAULT '',
       status TEXT DEFAULT 'open',
-      ai_review_id INTEGER,
       created_at TEXT DEFAULT (datetime('now')),
       updated_at TEXT DEFAULT (datetime('now')),
       FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
@@ -131,22 +130,6 @@ function createTables() {
       review_status TEXT DEFAULT 'pending',
       created_at TEXT DEFAULT (datetime('now')),
       FOREIGN KEY (pr_id) REFERENCES pull_requests(id) ON DELETE CASCADE,
-      FOREIGN KEY (user_id) REFERENCES users(id)
-    );
-
-    CREATE TABLE IF NOT EXISTS ai_reviews (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      pr_id INTEGER,
-      user_id INTEGER NOT NULL,
-      context_type TEXT DEFAULT 'pr_review',
-      overall_assessment TEXT DEFAULT '',
-      issues TEXT DEFAULT '[]',
-      strengths TEXT DEFAULT '[]',
-      security_concerns TEXT DEFAULT '[]',
-      performance_notes TEXT DEFAULT '[]',
-      overall_score INTEGER DEFAULT 5,
-      created_at TEXT DEFAULT (datetime('now')),
-      FOREIGN KEY (pr_id) REFERENCES pull_requests(id),
       FOREIGN KEY (user_id) REFERENCES users(id)
     );
 

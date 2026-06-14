@@ -1,6 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import axios from 'axios';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import Badge from '../components/ui/badge';
 import Button from '../components/ui/button';
@@ -20,10 +19,7 @@ export default function SnippetDetail() {
   const toast = useToast();
   const [snippet, setSnippet] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [aiExplaining, setAiExplaining] = useState(false);
-  const [aiExplanation, setAiExplanation] = useState('');
   const [copied, setCopied] = useState(false);
-  const explanationRef = useRef(null);
 
   useEffect(() => {
     API.get(`/snippets/${id}`)
@@ -36,44 +32,6 @@ export default function SnippetDetail() {
     setCopied(true);
     toast('Copied to clipboard!', 'success');
     setTimeout(() => setCopied(false), 2000);
-  };
-
-  const handleAiExplain = async () => {
-    setAiExplaining(true);
-    setAiExplanation('');
-    try {
-      const res = await fetch('/api/ai/explain', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
-        body: JSON.stringify({ code: snippet.code_content, language: snippet.language }),
-      });
-
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = '';
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n');
-        buffer = lines.pop() || '';
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            const data = line.slice(6);
-            if (data === '[DONE]') continue;
-            try {
-              const parsed = JSON.parse(data);
-              setAiExplanation(prev => prev + parsed.text);
-            } catch (e) {}
-          }
-        }
-      }
-    } catch (err) {
-      toast('AI explanation failed', 'error');
-    } finally {
-      setAiExplaining(false);
-    }
   };
 
   if (loading) {
@@ -118,9 +76,6 @@ export default function SnippetDetail() {
       </Card>
 
       <div className="flex gap-3 mb-8">
-        <Button onClick={handleAiExplain} disabled={aiExplaining}>
-          {aiExplaining ? 'Explaining...' : '🤖 AI Explain'}
-        </Button>
         {user && (
           <Button variant="outline" onClick={async () => {
             try {
@@ -135,32 +90,6 @@ export default function SnippetDetail() {
           </Button>
         )}
       </div>
-
-      {aiExplanation && (
-        <Card className="mb-6 border-primary/30">
-          <CardHeader>
-            <CardTitle className="text-sm flex items-center gap-2">
-              <span className="text-primary">🤖</span> AI Explanation
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div ref={explanationRef} className="prose prose-invert prose-sm max-w-none text-slate-300 whitespace-pre-wrap">
-              {aiExplanation}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {aiExplaining && !aiExplanation && (
-        <Card className="mb-6 border-primary/30">
-          <CardContent className="p-6">
-            <div className="flex items-center gap-3 text-slate-400">
-              <div className="animate-spin w-4 h-4 border-2 border-primary border-t-transparent rounded-full" />
-              AI is analyzing your code...
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       <EditHistory entityType="snippet" entityId={snippet.id} />
     </div>

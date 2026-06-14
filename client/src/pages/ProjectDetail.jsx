@@ -233,7 +233,6 @@ export default function ProjectDetail() {
                   <Badge variant={pr.status === 'open' ? 'success' : pr.status === 'merged' ? 'secondary' : 'destructive'}>
                     {pr.status}
                   </Badge>
-                  {pr.ai_review_id && <Badge variant="warning">AI Review</Badge>}
                   <span className="text-xs text-slate-500">💬 {pr.comments_count || 0}</span>
                 </div>
               </CardContent>

@@ -1,0 +1,313 @@
+================================================================================
+                   DEVCOLLAB - WINDOWS SETUP GUIDE
+            Smart Developer Collaboration Platform
+================================================================================
+
+This guide walks you through setting up and running the DevCollab project
+on a Windows laptop from scratch.
+
+================================================================================
+TABLE OF CONTENTS
+================================================================================
+  I.   PREREQUISITES
+  II.  CLONING THE PROJECT
+  III. ENVIRONMENT VARIABLES
+  IV.  BACKEND SETUP
+  V.   FRONTEND SETUP
+  VI.  RUNNING THE APPLICATION
+  VII. TROUBLESHOOTING
+  VIII. QUICK COMMAND REFERENCE
+
+================================================================================
+I. PREREQUISITES
+================================================================================
+
+Install the following software in order before proceeding.
+
+A. Node.js (v18 or later)
+-------------------------------------------------------------------------------
+  1. Go to https://nodejs.org
+  2. Download the LTS installer (e.g., v20.x.x or v22.x.x)
+  3. Run the MSI installer
+  4. Make sure "Add to PATH" is checked during installation
+  5. After installation, open Command Prompt and verify:
+
+       node --version     (should show v18.x.x or higher)
+       npm --version      (should show 9.x.x or higher)
+
+B. MongoDB (v7.0 or later) - Choose one option
+-------------------------------------------------------------------------------
+
+  OPTION 1: MongoDB Community Server (Recommended for local development)
+
+    1. Download from: https://www.mongodb.com/try/download/community
+    2. Choose the MSI installer for Windows
+    3. Run the installer
+    4. During setup, check "Install MongoDB as a Service"
+    5. MongoDB will start automatically on localhost:27017
+    6. Verify by running in Command Prompt:
+
+         mongosh
+
+       You should see a "test>" prompt. Type "exit" to quit.
+
+  OPTION 2: MongoDB Atlas (Cloud - no local install needed)
+
+    1. Go to https://www.mongodb.com/atlas
+    2. Create a free account and deploy a free cluster
+    3. Under "Network Access", add your IP address
+    4. Under "Database Access", create a database user with a password
+    5. Click "Connect" -> "Drivers" and copy the connection string
+    6. You will use this connection string in the .env file later
+
+C. Git
+-------------------------------------------------------------------------------
+  1. Download from: https://git-scm.com/download/win
+  2. Run the installer with default settings
+  3. Verify in Command Prompt:
+
+       git --version
+
+================================================================================
+II. CLONING THE PROJECT
+================================================================================
+
+  1. Open Command Prompt or PowerShell
+  2. Navigate to the folder where you want the project (e.g., C:\Projects)
+
+       cd C:\Projects
+
+  3. Clone the repository:
+
+       git clone https://github.com/Saran-8585/devcollab.git
+
+  4. Enter the project folder:
+
+       cd devcollab
+
+================================================================================
+III. ENVIRONMENT VARIABLES
+================================================================================
+
+The project comes with default .env files that work out of the box.
+Review and modify them only if needed.
+
+A. Server Environment (server/.env)
+-------------------------------------------------------------------------------
+  Open server/.env in a text editor. It should contain:
+
+      PORT=5000
+      JWT_SECRET=devcollab-super-secret-key-2024
+      MONGO_URI=mongodb://127.0.0.1:27017/devcollab
+
+  - PORT: The backend server port (change if 5000 is already in use)
+  - JWT_SECRET: Secret key for JWT token generation
+  - MONGO_URI: MongoDB connection string
+    - If using MongoDB Atlas, replace the MONGO_URI with your Atlas
+      connection string (e.g., mongodb+srv://<user>:<password>@cluster0.xxxxx.mongodb.net/devcollab)
+
+B. Client Environment (client/.env)
+-------------------------------------------------------------------------------
+  Open client/.env in a text editor. It should contain:
+
+      VITE_API_URL=http://localhost:5000/api
+
+  - VITE_API_URL: The API URL that the frontend calls
+  - If you change the server PORT, update this URL accordingly
+
+================================================================================
+IV. BACKEND SETUP
+================================================================================
+
+  These steps install dependencies, seed the database, and start the server.
+
+  Step 1: Install dependencies
+  ----------------------------------------------------------------------------
+    Open Command Prompt and run:
+
+        cd server
+        npm install
+
+    This will install all packages listed in server/package.json:
+      - express, mongoose, bcryptjs, jsonwebtoken, cors, dotenv
+
+    Wait for completion. You should see no errors.
+
+  Step 2: Seed the database
+  ----------------------------------------------------------------------------
+    Run the seed script to populate MongoDB with sample data:
+
+        npm run seed
+
+    This creates:
+      - A demo user account
+      - Sample projects, tasks, snippets, discussions, etc.
+
+  Step 3: Start the backend server
+  ----------------------------------------------------------------------------
+    Run:
+
+        npm run dev
+
+    Expected output:
+      > Server running on port 5000
+      > MongoDB connected: mongodb://127.0.0.1:27017/devcollab
+
+    The server uses --watch mode, so it auto-restarts on file changes.
+    Keep this terminal window open.
+
+================================================================================
+V. FRONTEND SETUP
+================================================================================
+
+  Open a NEW Command Prompt or PowerShell window (keep the server running).
+
+  Step 1: Navigate to client folder
+  ----------------------------------------------------------------------------
+      cd devcollab\client
+
+    (Adjust the path if you are not in the project root)
+
+  Step 2: Install dependencies
+  ----------------------------------------------------------------------------
+      npm install
+
+    This installs all packages listed in client/package.json:
+      - react, react-dom, react-router-dom, axios, tailwindcss,
+        recharts, lucide-react, radix-ui components, etc.
+
+    Wait for completion.
+
+  Step 3: Start the development server
+  ----------------------------------------------------------------------------
+      npm run dev
+
+    Expected output:
+      > VITE v6.x.x  ready in Xms
+      > Local:   http://localhost:5173/
+
+    Keep this terminal window open as well.
+
+================================================================================
+VI. RUNNING THE APPLICATION
+================================================================================
+
+  1. Open your web browser (Chrome, Edge, or Firefox)
+  2. Go to: http://localhost:5173
+  3. You should see the DevCollab login/landing page
+  4. Log in with the demo credentials:
+
+       Email:    demo@example.com
+       Password: password123
+
+  5. Explore the features:
+       - Developer Dashboard
+       - Projects & Kanban Tasks
+       - Code Snippets
+       - Pull Requests with diff viewer
+       - Global Discussions
+       - Admin Dashboard
+
+================================================================================
+VII. TROUBLESHOOTING
+================================================================================
+
+PROBLEM: "mongosh" or "mongo" is not recognized
+-------------------------------------------------------------------------------
+  CAUSE: MongoDB is installed but not on the system PATH.
+  FIX:   Reinstall MongoDB and ensure "Add to PATH" is checked.
+         Or use MongoDB Compass as a GUI alternative.
+         Or switch to MongoDB Atlas (cloud option).
+
+PROBLEM: Port 5000 is already in use
+-------------------------------------------------------------------------------
+  CAUSE: Another program (or a previous server instance) is using port 5000.
+  FIX 1: In server/.env, change PORT=5001
+         In client/.env, change VITE_API_URL=http://localhost:5001/api
+         Restart both servers.
+  FIX 2: Find what is using port 5000:
+           netstat -ano | findstr :5000
+         Then kill the process:
+           taskkill /PID <PID> /F
+
+PROBLEM: "npm install" fails with errors
+-------------------------------------------------------------------------------
+  FIX 1: Run Command Prompt as Administrator and try again.
+  FIX 2: Clear npm cache:
+           npm cache clean --force
+         Then retry.
+  FIX 3: Delete node_modules folders and package-lock.json files, then retry.
+
+PROBLEM: MongoDB connection refused
+-------------------------------------------------------------------------------
+  CAUSE: MongoDB service is not running.
+  FIX:   Open Command Prompt as Administrator and run:
+           net start MongoDB
+         Alternatively, start it manually from Services panel (services.msc).
+
+PROBLEM: CORS errors in browser console
+-------------------------------------------------------------------------------
+  CAUSE: Frontend and backend ports don't match the .env configuration.
+  FIX:   Ensure server runs on port 5000 and client on port 5173.
+         VITE_API_URL must be http://localhost:5000/api.
+
+PROBLEM: PowerShell script execution blocked
+-------------------------------------------------------------------------------
+  FIX:   Run PowerShell as Administrator and execute:
+           Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
+         Then retry the commands.
+
+PROBLEM: Blank page or white screen
+-------------------------------------------------------------------------------
+  FIX:   Open browser developer tools (F12) and check the Console tab.
+         If there is an API error, ensure the backend server is running.
+         If there is a compilation error, check the frontend terminal output.
+
+PROBLEM: bcryptjs installation warning
+-------------------------------------------------------------------------------
+  NOTE:  bcryptjs is a pure JavaScript implementation. It does NOT require
+         native compilation or Visual Studio Build Tools on Windows. Warnings
+         about optional native dependencies can be safely ignored.
+
+================================================================================
+VIII. QUICK COMMAND REFERENCE
+================================================================================
+
+  ---- FIRST TIME SETUP ----
+
+  Step 1: Clone the repository
+    git clone https://github.com/Saran-8585/devcollab.git
+    cd devcollab
+
+  Step 2: Setup backend
+    cd server
+    npm install
+    npm run seed
+    npm run dev
+
+  Step 3: Setup frontend (new terminal)
+    cd client
+    npm install
+    npm run dev
+
+  Step 4: Open browser
+    http://localhost:5173
+
+  ---- EVERYDAY USE ----
+
+  Terminal 1 (Backend):
+    cd devcollab\server
+    npm run dev
+
+  Terminal 2 (Frontend):
+    cd devcollab\client
+    npm run dev
+
+  ---- CREDENTIALS ----
+
+  Email:    demo@example.com
+  Password: password123
+
+================================================================================
+END OF SETUP GUIDE
+================================================================================

@@ -141,7 +141,47 @@ Navigate to **http://localhost:5173** in your browser.
 
 ---
 
+## Docker Setup (Alternative — No Manual Installation Required)
+
+If you have Docker Engine (>= 24) and Docker Compose (>= 2.20) installed, you can skip installing Node.js and MongoDB manually.
+
+### Setup
+
+```cmd
+:: Clone the repository
+git clone https://github.com/Saran-8585/devcollab.git
+cd devcollab
+
+:: Build and start all services
+docker compose up --build -d
+
+:: Seed the database with sample data
+docker compose exec server npm run seed
+```
+
+### Usage
+
+```cmd
+:: Start all services
+docker compose up -d
+
+:: View logs
+docker compose logs -f
+
+:: Stop all services
+docker compose down
+
+:: Stop and delete volumes (clears database)
+docker compose down -v
+```
+
+- **Frontend:** http://localhost
+- **Backend API:** http://localhost/api/...
+- **MongoDB:** localhost:27017
+
 ## Quick Reference
+
+### Manual Setup
 
 ```cmd
 # Clone

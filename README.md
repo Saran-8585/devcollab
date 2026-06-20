@@ -13,12 +13,29 @@ A GitHub-inspired developer collaboration platform built with React, Node.js, Ex
 
 ## Quick Start
 
-### Prerequisites
-- Node.js >= 18
-- npm >= 9
-- MongoDB >= 7.0 (running on `localhost:27017`)
+### Option A — Docker (recommended)
 
-### 1. Install Dependencies & Seed Database
+**Prerequisites:** Docker Engine >= 24, Docker Compose >= 2.20
+
+```bash
+# Clone and enter the project
+git clone https://github.com/Saran-8585/devcollab.git
+cd devcollab
+
+# Build and start all services
+docker compose up --build -d
+
+# Seed the database with sample data
+docker compose exec server npm run seed
+
+# Open http://localhost
+```
+
+### Option B — Manual Setup
+
+**Prerequisites:** Node.js >= 18, npm >= 9, MongoDB >= 7.0 (running on `localhost:27017`)
+
+#### 1. Install Dependencies & Seed Database
 
 ```bash
 # Install server dependencies
@@ -29,14 +46,14 @@ npm install
 npm run seed
 ```
 
-### 2. Start the Server
+#### 2. Start the Server
 
 ```bash
 npm run dev
 # Server runs on http://localhost:5000
 ```
 
-### 3. Start the Client
+#### 3. Start the Client
 
 ```bash
 # In a new terminal
@@ -46,7 +63,7 @@ npm run dev
 # Client runs on http://localhost:5173
 ```
 
-### 4. Open the App
+#### 4. Open the App
 
 Navigate to **http://localhost:5173**
 
@@ -69,6 +86,8 @@ MONGO_URI=mongodb://127.0.0.1:27017/devcollab
 ```
 VITE_API_URL=http://localhost:5000/api
 ```
+
+> When using Docker, environment variables are set in `docker-compose.yml`. The `.env` files on disk are ignored by the containers.
 
 ## Features
 

@@ -45,11 +45,13 @@ B. MongoDB (v7.0 or later) - Choose one option
     3. Run the installer
     4. During setup, check "Install MongoDB as a Service"
     5. MongoDB will start automatically on localhost:27017
-    6. Verify by running in Command Prompt:
+     6. Verify by running in Command Prompt:
 
-         mongosh
+          mongosh
 
-       You should see a "test>" prompt. Type "exit" to quit.
+        You should see a "test>" prompt. Type "exit" to quit.
+
+        > Note: The Docker setup uses MongoDB internally. You do not need to install MongoDB locally if you use Docker.
 
   OPTION 2: MongoDB Atlas (Cloud - no local install needed)
 
@@ -197,8 +199,7 @@ VI. RUNNING THE APPLICATION
   3. You should see the DevCollab login/landing page
   4. Log in with the demo credentials:
 
-       Email:    demo@example.com
-       Password: password123
+        See the Credentials table in Section IX below
 
   5. Explore the features:
        - Developer Dashboard
@@ -305,9 +306,9 @@ VIII. DOCKER SETUP (ALTERNATIVE - NO MANUAL INSTALLATION REQUIRED)
 
   C. Accessing the Application
   -------------------------------------------------------------------------------
-    Frontend:     http://localhost
-    Backend API:  http://localhost/api/...
-    MongoDB:      localhost:27017
+    Frontend:     http://localhost:8080
+    Backend API:  http://localhost:8080/api/... (via nginx proxy)
+    MongoDB:      internal only (not exposed on host)
 
 ===============================================================================
 IX. QUICK COMMAND REFERENCE
@@ -345,8 +346,13 @@ IX. QUICK COMMAND REFERENCE
 
   ---- CREDENTIALS ----
 
-  Email:    demo@example.com
-  Password: password123
+  | Email                | Password    | Role      |
+  | -------------------- | ----------- | --------- |
+  | alex@example.com     | password123 | Admin     |
+  | admin@devcollab.com  | admin123    | Admin     |
+  | dev1@devcollab.com   | dev123      | Developer |
+  | dev2@devcollab.com   | dev123      | Developer |
+  | demo@example.com     | password123 | Developer |
 
 ================================================================================
 END OF SETUP GUIDE

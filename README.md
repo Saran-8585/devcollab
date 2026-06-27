@@ -28,7 +28,7 @@ docker compose up --build -d
 # Seed the database with sample data
 docker compose exec server npm run seed
 
-# Open http://localhost
+# Open http://localhost:8080
 ```
 
 ### Option B — Manual Setup
@@ -69,9 +69,13 @@ Navigate to **http://localhost:5173**
 
 ## Seed Credentials
 
-| Email | Password |
-|-------|----------|
-| demo@example.com | password123 |
+| Email                | Password    | Role      |
+| -------------------- | ----------- | --------- |
+| alex@example.com     | password123 | Admin     |
+| admin@devcollab.com  | admin123    | Admin     |
+| dev1@devcollab.com   | dev123      | Developer |
+| dev2@devcollab.com   | dev123      | Developer |
+| demo@example.com     | password123 | Developer |
 
 ## Environment Variables
 
@@ -126,11 +130,12 @@ devcollab/
 | Group | Endpoints |
 |-------|-----------|
 | Auth | POST /api/auth/register, POST /api/auth/login, GET /api/auth/me |
-| Users | GET /api/users/:username, PUT /api/profile, POST/DELETE /api/follow/:userId |
+| Users | GET /api/users/:username, PUT /api/profile, POST/DELETE /api/users/follow/:userId |
 | Projects | CRUD /api/projects, POST /api/projects/:id/collaborate |
-| Tasks | GET/POST /api/tasks, PATCH /api/tasks/:id/status, PUT/DELETE |
+| Tasks | GET /api/tasks/project/:projectId, POST /api/tasks, PUT/DELETE /api/tasks/:id |
 | Snippets | CRUD /api/snippets, POST /api/snippets/:id/like |
-| PRs | GET/POST /api/prs, PATCH /api/prs/:id/status, POST /comments |
-| Discussions | GET/POST /api/discussions, POST /:id/replies |
-| Dashboard | GET /api/dashboard, /dashboard/activity |
-| Admin | GET /api/admin/stats, /users, PATCH /role, /suspend |
+| PRs | GET /api/prs/project/:projectId, GET /api/prs/:id, POST /api/prs, PATCH /api/prs/:id/status, POST /api/prs/:id/comments |
+| Discussions | GET /api/discussions/project/:projectId, POST /api/discussions, POST /api/discussions/:id/replies |
+| Dashboard | GET /api/dashboard |
+| Activity | GET /api/activity, GET /api/activity/:entityType/:entityId |
+| Admin | GET /api/admin/stats, GET /api/admin/users, PATCH /api/admin/users/:id/suspend, GET /api/admin/flags, PATCH /api/admin/flags/:id |

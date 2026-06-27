@@ -120,11 +120,15 @@ npm run dev
 
 Navigate to **http://localhost:5173** in your browser.
 
-**Demo credentials:**
+**Available credentials:**
 
-| Email              | Password    |
-| ------------------ | ----------- |
-| demo@example.com   | password123 |
+| Email                | Password    | Role      |
+| -------------------- | ----------- | --------- |
+| alex@example.com     | password123 | Admin     |
+| admin@devcollab.com  | admin123    | Admin     |
+| dev1@devcollab.com   | dev123      | Developer |
+| dev2@devcollab.com   | dev123      | Developer |
+| demo@example.com     | password123 | Developer |
 
 ---
 
@@ -175,9 +179,9 @@ docker compose down
 docker compose down -v
 ```
 
-- **Frontend:** http://localhost
-- **Backend API:** http://localhost/api/...
-- **MongoDB:** localhost:27017
+- **Frontend:** http://localhost:8080
+- **Backend API:** http://localhost:8080/api/... (via nginx proxy)
+- **MongoDB:** internal only (not exposed on host)
 
 ## Quick Reference
 

@@ -104,24 +104,15 @@ export async function likeSnippet(req, res, next) {
     const snippet = await Snippet.findById(req.params.id);
     if (!snippet) return res.status(404).json({ error: 'Not found' });
     const existing = await SnippetLike.findOne({ snippet_id: snippet._id, user_id: req.user.id });
-    if (existing) return res.status(400).json({ error: 'Already liked' });
+    if (existing) {
+      await SnippetLike.deleteOne({ snippet_id: snippet._id, user_id: req.user.id });
+      await Snippet.findByIdAndUpdate(snippet._id, { $inc: { likes_count: -1 } });
+      return res.json({ liked: false });
+    }
 
     await SnippetLike.create({ snippet_id: snippet._id, user_id: req.user.id });
     await Snippet.findByIdAndUpdate(snippet._id, { $inc: { likes_count: 1 } });
-    res.json({ message: 'Liked' });
-  } catch (err) {
-    next(err);
-  }
-}
-
-export async function unlikeSnippet(req, res, next) {
-  try {
-    const snippet = await Snippet.findById(req.params.id);
-    if (!snippet) return res.status(404).json({ error: 'Not found' });
-    const result = await SnippetLike.deleteOne({ snippet_id: snippet._id, user_id: req.user.id });
-    if (result.deletedCount === 0) return res.status(400).json({ error: 'Not liked' });
-    await Snippet.findByIdAndUpdate(snippet._id, { $inc: { likes_count: -1 } });
-    res.json({ message: 'Unliked' });
+    res.json({ liked: true });
   } catch (err) {
     next(err);
   }

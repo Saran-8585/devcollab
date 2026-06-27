@@ -87,9 +87,9 @@ export default function AdminDashboard() {
           {/* Summary Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {[
-              ['👨‍💻', 'Total Developers', stats?.stats.totalDevs, 'text-blue-400'],
-              ['📁', 'Total Projects', stats?.stats.totalProjects, 'text-green-400'],
-              ['📝', 'Total Snippets', stats?.stats.totalSnippets, 'text-amber-400'],
+              ['👨‍💻', 'Total Developers', stats?.totalUsers, 'text-blue-400'],
+              ['📁', 'Total Projects', stats?.totalProjects, 'text-green-400'],
+              ['📝', 'Total Snippets', stats?.totalSnippets, 'text-amber-400'],
             ].map(([icon, label, count, color]) => (
               <Card key={label}>
                 <CardContent className="p-4 flex items-center gap-4">
@@ -101,38 +101,6 @@ export default function AdminDashboard() {
                 </CardContent>
               </Card>
             ))}
-          </div>
-
-          {/* Charts */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader><CardTitle className="text-sm">Projects by Language</CardTitle></CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={250}>
-                  <BarChart data={stats?.projectsByLanguage || []}>
-                    <XAxis dataKey="language" tick={{ fill: '#94a3b8', fontSize: 11 }} />
-                    <YAxis tick={{ fill: '#94a3b8', fontSize: 11 }} />
-                    <Tooltip contentStyle={{ background: '#1e293b', border: '1px solid #334155', borderRadius: '8px' }} />
-                    <Bar dataKey="count" fill="#3b82f6" radius={[4, 4, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader><CardTitle className="text-sm">New Registrations (Weekly)</CardTitle></CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={250}>
-                  <LineChart data={stats?.registrationsPerWeek || []}>
-                    <XAxis dataKey="week" tick={{ fill: '#94a3b8', fontSize: 11 }} />
-                    <YAxis tick={{ fill: '#94a3b8', fontSize: 11 }} />
-                    <Tooltip contentStyle={{ background: '#1e293b', border: '1px solid #334155', borderRadius: '8px' }} />
-                    <Line type="monotone" dataKey="count" stroke="#22c55e" strokeWidth={2} dot={{ fill: '#22c55e' }} />
-                  </LineChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-
           </div>
         </div>
       )}

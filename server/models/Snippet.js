@@ -6,7 +6,7 @@ const snippetSchema = new mongoose.Schema({
   title: { type: String, required: true },
   description: { type: String, default: '' },
   language: { type: String, default: 'JavaScript' },
-  code_content: { type: String, required: true },
+  code: { type: String, required: true },
   tags: { type: [String], default: [] },
   visibility: { type: String, default: 'public', enum: ['public', 'private'] },
   views_count: { type: Number, default: 0 },

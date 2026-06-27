@@ -4,9 +4,10 @@ import { logActivity } from '../utils/activityLogger.js';
 
 export async function listDiscussions(req, res, next) {
   try {
-    const { projectId, tag, sort } = req.query;
+    const { tag, sort } = req.query;
+    const { projectId } = req.params;
     const filter = {};
-    if (projectId) filter.project_id = projectId;
+    if (projectId && projectId !== 'all') filter.project_id = projectId;
     if (tag && tag !== 'all') filter.tags = tag;
     const sortMap = { newest: { created_at: -1 }, replies: { replies_count: -1 }, updated: { updated_at: -1 } };
     const sortOpt = sortMap[sort] || sortMap.newest;

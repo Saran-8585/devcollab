@@ -27,9 +27,11 @@ export default function Dashboard() {
   useEffect(() => {
     setLoading(true);
     Promise.all([
-      API.get('/dashboard').then(r => setSummary(r.data)),
-      API.get('/dashboard/tasks').then(r => setMyTasks(r.data.tasks)),
-      API.get('/dashboard/activity').then(r => { setActivity(r.data.activity); setHeatmap(r.data.heatmap); }),
+      API.get('/dashboard').then(r => {
+        setSummary(r.data);
+        setMyTasks(r.data.tasks || []);
+        setActivity(r.data.activity || []);
+      }),
       API.get('/projects').then(r => setMyProjects(r.data.projects)),
       API.get('/snippets', { params: { sort: 'newest' } }).then(r => setMySnippets(r.data.snippets)),
     ]).then(() => setLoading(false)).catch(() => setLoading(false));
@@ -168,10 +170,10 @@ export default function Dashboard() {
                       </div>
                     </div>
                     <Select value={t.status} onChange={async (e) => {
-                      await API.patch(`/tasks/${t.id}/status`, { status: e.target.value });
+                      await API.put(`/tasks/${t.id}`, { status: e.target.value });
                       toast('Status updated', 'success');
-                      const res = await API.get('/dashboard/tasks');
-                      setMyTasks(res.data.tasks);
+                      const res = await API.get('/dashboard');
+                      setMyTasks(res.data.tasks || []);
                     }}
                       options={TASK_STATUSES.map(s => ({ value: s, label: s.replace('_', ' ') }))} className="w-36" />
                   </CardContent>

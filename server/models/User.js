@@ -10,7 +10,7 @@ const userSchema = new mongoose.Schema({
   website: { type: String, default: '' },
   primary_language: { type: String, default: 'JavaScript' },
   skills: { type: [String], default: [] },
-  role: { type: String, default: 'developer', enum: ['developer', 'admin'] },
+  role: { type: String, default: 'developer', enum: ['developer', 'admin', 'moderator'] },
   contributions_count: { type: Number, default: 0 },
   followers_count: { type: Number, default: 0 },
   following_count: { type: Number, default: 0 },

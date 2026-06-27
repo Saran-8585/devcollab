@@ -27,6 +27,8 @@ async function seed() {
 
   console.log('Seeding database...');
   const hash = await bcrypt.hash('password123', 10);
+  const adminHash = await bcrypt.hash('admin123', 10);
+  const devHash = await bcrypt.hash('dev123', 10);
 
   // --- Users ---
   const users = await User.insertMany([
@@ -36,6 +38,9 @@ async function seed() {
     { name: 'Priya Patel', email: 'priya@example.com', password: hash, username: 'priyap', bio: 'DevOps engineer & Go enthusiast', location: 'Bangalore, India', website: 'https://priyap.dev', primary_language: 'Go', role: 'developer', followers_count: 31, following_count: 9 },
     { name: 'Jordan Lee', email: 'jordan@example.com', password: hash, username: 'jordanl', bio: 'Frontend developer specializing in Vue.js and UI/UX', location: 'Seattle, WA', website: null, primary_language: 'Vue.js', role: 'moderator', followers_count: 12, following_count: 6 },
     { name: 'Demo User', email: 'demo@example.com', password: hash, username: 'demo', bio: 'Demo account for testing', location: null, website: null, primary_language: 'JavaScript', role: 'developer', skills: ['React', 'Node.js', 'MongoDB'], followers_count: 3, following_count: 2 },
+    { name: 'Admin User', email: 'admin@devcollab.com', password: adminHash, username: 'admin', bio: 'Platform administrator', primary_language: 'JavaScript', role: 'admin', followers_count: 0, following_count: 0 },
+    { name: 'Developer One', email: 'dev1@devcollab.com', password: devHash, username: 'dev1', bio: 'First developer account', primary_language: 'Python', role: 'developer', followers_count: 0, following_count: 0 },
+    { name: 'Developer Two', email: 'dev2@devcollab.com', password: devHash, username: 'dev2', bio: 'Second developer account', primary_language: 'Go', role: 'developer', followers_count: 0, following_count: 0 },
   ]);
   const [alex, sarah, marcus, priya, jordan, demo] = users;
   console.log(`Created ${users.length} users`);
@@ -88,22 +93,22 @@ async function seed() {
 
   // --- Tasks ---
   await Task.insertMany([
-    { project_id: taskFlow._id, title: 'Set up CI/CD pipeline', description: 'Configure GitHub Actions for automated testing and deployment', assignee_id: alex._id, priority: 'high', status: 'in_progress', tags: ['devops', 'ci-cd'] },
-    { project_id: taskFlow._id, title: 'Implement drag-and-drop UI', description: 'Add drag-and-drop functionality for task cards on the board view', assignee_id: demo._id, priority: 'medium', status: 'open', tags: ['frontend', 'ui'] },
-    { project_id: taskFlow._id, title: 'Add real-time notifications', description: 'Implement WebSocket-based notifications for task assignments', assignee_id: alex._id, priority: 'high', status: 'open', tags: ['backend', 'real-time'] },
-    { project_id: taskFlow._id, title: 'Write unit tests', description: 'Achieve 80% test coverage for the main components', assignee_id: null, priority: 'medium', status: 'open', tags: ['testing'] },
-    { project_id: dataViz._id, title: 'Add 3D scatter plot support', description: 'Implement 3D scatter plots using Matplotlib', assignee_id: sarah._id, priority: 'medium', status: 'open', tags: ['3d', 'visualization'] },
-    { project_id: dataViz._id, title: 'Optimize rendering performance', description: 'Improve chart rendering speed for large datasets', assignee_id: alex._id, priority: 'high', status: 'open', tags: ['performance'] },
-    { project_id: dataViz._id, title: 'Create documentation site', description: 'Build a documentation site using Sphinx', assignee_id: jordan._id, priority: 'low', status: 'completed', tags: ['docs'] },
-    { project_id: healthTrack._id, title: 'Implement step counting algorithm', description: 'Build step counting using accelerometer data', assignee_id: marcus._id, priority: 'high', status: 'in_progress', tags: ['algorithm', 'mobile'] },
-    { project_id: healthTrack._id, title: 'Design sleep tracking UI', description: 'Create sleep tracking dashboard with charts', assignee_id: demo._id, priority: 'medium', status: 'open', tags: ['ui', 'design'] },
-    { project_id: cloudDeploy._id, title: 'Add AWS ECS support', description: 'Support deployment to AWS Elastic Container Service', assignee_id: priya._id, priority: 'high', status: 'in_progress', tags: ['aws', 'deployment'] },
-    { project_id: cloudDeploy._id, title: 'Implement rollback feature', description: 'Add automatic rollback on deployment failure', assignee_id: sarah._id, priority: 'medium', status: 'open', tags: ['deployment', 'safety'] },
-    { project_id: vueStore._id, title: 'Build product search', description: 'Implement product search with filters', assignee_id: jordan._id, priority: 'high', status: 'in_progress', tags: ['search', 'frontend'] },
-    { project_id: vueStore._id, title: 'Integrate payment gateway', description: 'Add Stripe payment integration for checkout', assignee_id: demo._id, priority: 'high', status: 'open', tags: ['payment', 'stripe'] },
-    { project_id: devcollabApi._id, title: 'Add rate limiting', description: 'Implement API rate limiting to prevent abuse', assignee_id: alex._id, priority: 'medium', status: 'open', tags: ['security'] },
-    { project_id: devcollabApi._id, title: 'Write API documentation', description: 'Document all API endpoints with examples', assignee_id: demo._id, priority: 'low', status: 'open', tags: ['docs'] },
-    { project_id: devcollabApi._id, title: 'Implement search functionality', description: 'Add full-text search across projects and snippets', assignee_id: alex._id, priority: 'high', status: 'in_progress', tags: ['backend'] },
+    { project_id: taskFlow._id, title: 'Set up CI/CD pipeline', description: 'Configure GitHub Actions for automated testing and deployment', created_by: alex._id, assignee_id: alex._id, priority: 'high', status: 'in_progress', tags: ['devops', 'ci-cd'] },
+    { project_id: taskFlow._id, title: 'Implement drag-and-drop UI', description: 'Add drag-and-drop functionality for task cards on the board view', created_by: alex._id, assignee_id: demo._id, priority: 'medium', status: 'open', tags: ['frontend', 'ui'] },
+    { project_id: taskFlow._id, title: 'Add real-time notifications', description: 'Implement WebSocket-based notifications for task assignments', created_by: alex._id, assignee_id: alex._id, priority: 'high', status: 'open', tags: ['backend', 'real-time'] },
+    { project_id: taskFlow._id, title: 'Write unit tests', description: 'Achieve 80% test coverage for the main components', created_by: alex._id, assignee_id: null, priority: 'medium', status: 'open', tags: ['testing'] },
+    { project_id: dataViz._id, title: 'Add 3D scatter plot support', description: 'Implement 3D scatter plots using Matplotlib', created_by: sarah._id, assignee_id: sarah._id, priority: 'medium', status: 'open', tags: ['3d', 'visualization'] },
+    { project_id: dataViz._id, title: 'Optimize rendering performance', description: 'Improve chart rendering speed for large datasets', created_by: sarah._id, assignee_id: alex._id, priority: 'high', status: 'open', tags: ['performance'] },
+    { project_id: dataViz._id, title: 'Create documentation site', description: 'Build a documentation site using Sphinx', created_by: sarah._id, assignee_id: jordan._id, priority: 'low', status: 'completed', tags: ['docs'] },
+    { project_id: healthTrack._id, title: 'Implement step counting algorithm', description: 'Build step counting using accelerometer data', created_by: marcus._id, assignee_id: marcus._id, priority: 'high', status: 'in_progress', tags: ['algorithm', 'mobile'] },
+    { project_id: healthTrack._id, title: 'Design sleep tracking UI', description: 'Create sleep tracking dashboard with charts', created_by: marcus._id, assignee_id: demo._id, priority: 'medium', status: 'open', tags: ['ui', 'design'] },
+    { project_id: cloudDeploy._id, title: 'Add AWS ECS support', description: 'Support deployment to AWS Elastic Container Service', created_by: priya._id, assignee_id: priya._id, priority: 'high', status: 'in_progress', tags: ['aws', 'deployment'] },
+    { project_id: cloudDeploy._id, title: 'Implement rollback feature', description: 'Add automatic rollback on deployment failure', created_by: priya._id, assignee_id: sarah._id, priority: 'medium', status: 'open', tags: ['deployment', 'safety'] },
+    { project_id: vueStore._id, title: 'Build product search', description: 'Implement product search with filters', created_by: jordan._id, assignee_id: jordan._id, priority: 'high', status: 'in_progress', tags: ['search', 'frontend'] },
+    { project_id: vueStore._id, title: 'Integrate payment gateway', description: 'Add Stripe payment integration for checkout', created_by: jordan._id, assignee_id: demo._id, priority: 'high', status: 'open', tags: ['payment', 'stripe'] },
+    { project_id: devcollabApi._id, title: 'Add rate limiting', description: 'Implement API rate limiting to prevent abuse', created_by: demo._id, assignee_id: alex._id, priority: 'medium', status: 'open', tags: ['security'] },
+    { project_id: devcollabApi._id, title: 'Write API documentation', description: 'Document all API endpoints with examples', created_by: demo._id, assignee_id: demo._id, priority: 'low', status: 'open', tags: ['docs'] },
+    { project_id: devcollabApi._id, title: 'Implement search functionality', description: 'Add full-text search across projects and snippets', created_by: demo._id, assignee_id: alex._id, priority: 'high', status: 'in_progress', tags: ['backend'] },
   ]);
   console.log('Created tasks');
 
@@ -211,7 +216,12 @@ async function seed() {
   console.log('Created snippet likes');
 
   console.log('\n✓ Seed completed successfully!');
-  console.log('Login credentials: demo@example.com / password123');
+  console.log('Login credentials:');
+  console.log('  Admin:     alex@example.com    / password123');
+  console.log('  Admin:     admin@devcollab.com / admin123');
+  console.log('  Developer: dev1@devcollab.com  / dev123');
+  console.log('  Developer: dev2@devcollab.com  / dev123');
+  console.log('  Developer: demo@example.com    / password123');
 
   await mongoose.disconnect();
 }

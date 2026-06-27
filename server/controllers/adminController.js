@@ -3,6 +3,7 @@ import Project from '../models/Project.js';
 import Task from '../models/Task.js';
 import Snippet from '../models/Snippet.js';
 import Discussion from '../models/Discussion.js';
+import Flag from '../models/Flag.js';
 
 export async function getOverview(req, res, next) {
   try {
@@ -68,6 +69,32 @@ export async function unsuspendUser(req, res, next) {
   try {
     await User.findByIdAndUpdate(req.params.id, { $set: { is_suspended: false } });
     res.json({ message: 'User unsuspended' });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function listFlags(req, res, next) {
+  try {
+    const flags = await Flag.find({ status: 'pending' })
+      .populate('reporter_id', 'name username')
+      .sort({ created_at: -1 });
+    res.json({
+      flags: flags.map(f => ({
+        id: f._id, entity_type: f.target_type, entity_id: f.target_id,
+        flagger_username: f.reporter_id?.username, reason: f.reason,
+        created_at: f.created_at,
+      })),
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function dismissFlag(req, res, next) {
+  try {
+    await Flag.findByIdAndUpdate(req.params.id, { $set: { status: 'dismissed' } });
+    res.json({ message: 'Flag dismissed' });
   } catch (err) {
     next(err);
   }

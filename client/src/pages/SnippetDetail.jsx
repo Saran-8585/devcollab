@@ -28,7 +28,7 @@ export default function SnippetDetail() {
   }, [id]);
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(snippet.code_content);
+    navigator.clipboard.writeText(snippet.code);
     setCopied(true);
     toast('Copied to clipboard!', 'success');
     setTimeout(() => setCopied(false), 2000);
@@ -71,7 +71,7 @@ export default function SnippetDetail() {
           showLineNumbers
           customStyle={{ fontSize: '13px', padding: '16px', margin: 0, borderRadius: 0 }}
         >
-          {snippet.code_content}
+          {snippet.code}
         </SyntaxHighlighter>
       </Card>
 

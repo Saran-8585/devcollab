@@ -86,7 +86,7 @@ export default function SnippetFeed() {
                       customStyle={{ fontSize: '11px', padding: '8px', margin: 0, maxHeight: '150px' }}
                       showLineNumbers={false}
                     >
-                      {s.code_content?.split('\n').slice(0, 8).join('\n')}
+                      {s.code?.split('\n').slice(0, 8).join('\n')}
                     </SyntaxHighlighter>
                   </div>
                   <div className="flex items-center justify-between mt-2 text-xs text-slate-500">

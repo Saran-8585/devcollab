@@ -16,7 +16,7 @@ export default function SnippetNew() {
   const [projects, setProjects] = useState([]);
   const [form, setForm] = useState({
     title: '', description: '', language: 'JavaScript',
-    code_content: '', tags: '', visibility: 'public', project_id: '',
+    code: '', tags: '', visibility: 'public', project_id: '',
   });
   const [submitting, setSubmitting] = useState(false);
 
@@ -28,7 +28,7 @@ export default function SnippetNew() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.title || !form.code_content) {
+    if (!form.title || !form.code) {
       toast('Title and code are required', 'error');
       return;
     }
@@ -74,8 +74,8 @@ export default function SnippetNew() {
             Code <span className="text-red-400">*</span>
           </label>
           <textarea
-            name="code_content"
-            value={form.code_content}
+            name="code"
+            value={form.code}
             onChange={handleChange}
             className="w-full h-64 rounded-md border border-input bg-slate-950 p-4 font-mono text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary resize-y"
             placeholder="Paste your code here..."

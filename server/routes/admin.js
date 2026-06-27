@@ -1,12 +1,12 @@
 import { Router } from 'express';
-import { getStats, getUsers, toggleSuspend, getFlags, dismissFlag } from '../controllers/adminController.js';
+import { getOverview, listUsers, suspendUser, listFlags, dismissFlag } from '../controllers/adminController.js';
 import adminAuth from '../middleware/adminAuth.js';
 
 const router = Router();
-router.get('/stats', adminAuth, getStats);
-router.get('/users', adminAuth, getUsers);
-router.patch('/users/:id/suspend', adminAuth, toggleSuspend);
-router.get('/flags', adminAuth, getFlags);
+router.get('/stats', adminAuth, getOverview);
+router.get('/users', adminAuth, listUsers);
+router.patch('/users/:id/suspend', adminAuth, suspendUser);
+router.get('/flags', adminAuth, listFlags);
 router.patch('/flags/:id', adminAuth, dismissFlag);
 
 export default router;

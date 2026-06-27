@@ -77,7 +77,7 @@ export default function ProjectDetail() {
           <button
             onClick={async () => {
               const nextStatus = TASK_STATUSES[TASK_STATUSES.indexOf(task.status) + 1];
-              await API.patch(`/tasks/${task.id}/status`, { status: nextStatus });
+              await API.put(`/tasks/${task.id}`, { status: nextStatus });
               toast(`Moved to ${nextStatus}`, 'success');
               fetchProject();
             }}
@@ -196,7 +196,7 @@ export default function ProjectDetail() {
                 </div>
                 <SyntaxHighlighter language={s.language.toLowerCase()} style={atomOneDark}
                   customStyle={{ fontSize: '12px', padding: '12px', maxHeight: '120px' }} showLineNumbers={false}>
-                  {s.code_content?.split('\n').slice(0, 6).join('\n')}
+                  {s.code?.split('\n').slice(0, 6).join('\n')}
                 </SyntaxHighlighter>
                 <div className="flex items-center justify-between mt-2 text-xs text-slate-500">
                   <span>by {s.author_username} · {timeAgo(s.created_at)}</span>

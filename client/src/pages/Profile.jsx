@@ -39,11 +39,11 @@ export default function Profile() {
   const handleFollow = async () => {
     try {
       if (isFollowing) {
-        await API.delete(`/follow/${profile.user.id}`);
+        await API.delete(`/users/follow/${profile.user.id}`);
         setIsFollowing(false);
         toast('Unfollowed', 'info');
       } else {
-        await API.post(`/follow/${profile.user.id}`);
+        await API.post(`/users/follow/${profile.user.id}`);
         setIsFollowing(true);
         toast('Following!', 'success');
       }

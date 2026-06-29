@@ -59,11 +59,15 @@ export default function Login() {
 
         <div className="mt-6 p-4 rounded-lg bg-slate-800/50 border border-slate-700">
           <p className="text-xs font-medium text-slate-400 mb-2 uppercase tracking-wider">Seed Credentials</p>
-          <div className="space-y-1.5">
+          <div className="space-y-1.5 max-h-48 overflow-y-auto">
             {[
               ['Admin', 'admin@devcollab.com', 'admin123'],
               ['Dev 1', 'dev1@devcollab.com', 'dev123'],
               ['Dev 2', 'dev2@devcollab.com', 'dev123'],
+              ['Dev 3', 'dev3@devcollab.com', 'dev123'],
+              ['Dev 4', 'dev4@devcollab.com', 'dev123'],
+              ['Dev 5', 'dev5@devcollab.com', 'dev123'],
+              ['Dev 6', 'dev6@devcollab.com', 'dev123'],
             ].map(([label, e, pw]) => (
               <button
                 key={label}

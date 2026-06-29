@@ -41,6 +41,10 @@ async function seed() {
     { name: 'Admin User', email: 'admin@devcollab.com', password: adminHash, username: 'admin', bio: 'Platform administrator', primary_language: 'JavaScript', role: 'admin', followers_count: 0, following_count: 0 },
     { name: 'Developer One', email: 'dev1@devcollab.com', password: devHash, username: 'dev1', bio: 'First developer account', primary_language: 'Python', role: 'developer', followers_count: 0, following_count: 0 },
     { name: 'Developer Two', email: 'dev2@devcollab.com', password: devHash, username: 'dev2', bio: 'Second developer account', primary_language: 'Go', role: 'developer', followers_count: 0, following_count: 0 },
+    { name: 'Developer Three', email: 'dev3@devcollab.com', password: devHash, username: 'dev3', bio: 'Third developer account', primary_language: 'Rust', role: 'developer', followers_count: 0, following_count: 0 },
+    { name: 'Developer Four', email: 'dev4@devcollab.com', password: devHash, username: 'dev4', bio: 'Fourth developer account', primary_language: 'TypeScript', role: 'developer', followers_count: 0, following_count: 0 },
+    { name: 'Developer Five', email: 'dev5@devcollab.com', password: devHash, username: 'dev5', bio: 'Fifth developer account', primary_language: 'Java', role: 'developer', followers_count: 0, following_count: 0 },
+    { name: 'Developer Six', email: 'dev6@devcollab.com', password: devHash, username: 'dev6', bio: 'Sixth developer account', primary_language: 'C++', role: 'developer', followers_count: 0, following_count: 0 },
   ]);
   const [alex, sarah, marcus, priya, jordan, demo] = users;
   console.log(`Created ${users.length} users`);
@@ -61,33 +65,58 @@ async function seed() {
 
   // --- Projects ---
   const projects = await Project.insertMany([
-    { owner_id: alex._id, name: 'TaskFlow', description: 'A modern project management tool with real-time collaboration features', primary_language: 'JavaScript', visibility: 'public', tags: ['react', 'node', 'real-time'], stars_count: 42, forks_count: 12, tasks_count: 8, readme_content: '# TaskFlow\n\nA modern project management tool.\n\n## Features\n- Real-time collaboration\n- Task management\n- Team dashboards\n' },
-    { owner_id: sarah._id, name: 'DataVizPro', description: 'Advanced data visualization library for Python with support for interactive charts', primary_language: 'Python', visibility: 'public', tags: ['python', 'visualization', 'data-science'], stars_count: 89, forks_count: 34, tasks_count: 15, readme_content: '# DataVizPro\n\nAdvanced data visualization library.\n\n## Features\n- Interactive charts\n- Statistical plots\n- Real-time data streams\n' },
-    { owner_id: marcus._id, name: 'HealthTrack', description: 'A cross-platform health tracking mobile application', primary_language: 'Dart', visibility: 'public', tags: ['flutter', 'health', 'mobile'], stars_count: 18, forks_count: 5, tasks_count: 12, readme_content: '# HealthTrack\n\nCross-platform health tracking app.\n\n## Features\n- Step tracking\n- Sleep monitoring\n- Nutrition logging\n' },
-    { owner_id: priya._id, name: 'CloudDeploy', description: 'Automated deployment tool for cloud infrastructure management', primary_language: 'Go', visibility: 'public', tags: ['go', 'devops', 'cloud'], stars_count: 56, forks_count: 23, tasks_count: 10, readme_content: '# CloudDeploy\n\nAutomated deployment tool.\n\n## Features\n- Multi-cloud support\n- Infrastructure as Code\n- Rollback capabilities\n' },
-    { owner_id: jordan._id, name: 'VueStore', description: 'E-commerce frontend built with Vue.js and Pinia store', primary_language: 'Vue.js', visibility: 'public', tags: ['vue', 'ecommerce', 'pinia'], stars_count: 31, forks_count: 8, tasks_count: 6, readme_content: '# VueStore\n\nE-commerce frontend built with Vue.js.\n\n## Features\n- Product catalog\n- Shopping cart\n- Checkout flow\n' },
-    { owner_id: demo._id, name: 'DevCollab API', description: 'The main API for the DevCollab platform', primary_language: 'JavaScript', visibility: 'public', tags: ['api', 'node', 'express', 'mongodb'], stars_count: 5, forks_count: 2, tasks_count: 4, readme_content: '# DevCollab API\n\nBackend API for DevCollab.\n\n## Features\n- User auth\n- Project management\n- Code snippets\n' },
-    { owner_id: alex._id, name: 'Private Notes', description: 'Personal notes app (private)', primary_language: 'JavaScript', visibility: 'private', tags: ['notes', 'personal'], stars_count: 0, forks_count: 0, tasks_count: 0, readme_content: '# Private Notes\n\nA private note-taking application.\n' },
+    { owner_id: alex._id, name: 'TaskFlow', description: 'A modern project management tool with real-time collaboration features', primary_language: 'JavaScript', visibility: 'public', tags: ['react', 'node', 'real-time'], stars_count: 42, forks_count: 12, readme_content: '# TaskFlow\n\nA modern project management tool.\n\n## Features\n- Real-time collaboration\n- Task management\n- Team dashboards\n' },
+    { owner_id: sarah._id, name: 'DataVizPro', description: 'Advanced data visualization library for Python with support for interactive charts', primary_language: 'Python', visibility: 'public', tags: ['python', 'visualization', 'data-science'], stars_count: 89, forks_count: 34, readme_content: '# DataVizPro\n\nAdvanced data visualization library.\n\n## Features\n- Interactive charts\n- Statistical plots\n- Real-time data streams\n' },
+    { owner_id: marcus._id, name: 'HealthTrack', description: 'A cross-platform health tracking mobile application', primary_language: 'Dart', visibility: 'public', tags: ['flutter', 'health', 'mobile'], stars_count: 18, forks_count: 5, readme_content: '# HealthTrack\n\nCross-platform health tracking app.\n\n## Features\n- Step tracking\n- Sleep monitoring\n- Nutrition logging\n' },
+    { owner_id: priya._id, name: 'CloudDeploy', description: 'Automated deployment tool for cloud infrastructure management', primary_language: 'Go', visibility: 'public', tags: ['go', 'devops', 'cloud'], stars_count: 56, forks_count: 23, readme_content: '# CloudDeploy\n\nAutomated deployment tool.\n\n## Features\n- Multi-cloud support\n- Infrastructure as Code\n- Rollback capabilities\n' },
+    { owner_id: jordan._id, name: 'VueStore', description: 'E-commerce frontend built with Vue.js and Pinia store', primary_language: 'Vue.js', visibility: 'public', tags: ['vue', 'ecommerce', 'pinia'], stars_count: 31, forks_count: 8, readme_content: '# VueStore\n\nE-commerce frontend built with Vue.js.\n\n## Features\n- Product catalog\n- Shopping cart\n- Checkout flow\n' },
+    { owner_id: demo._id, name: 'DevCollab API', description: 'The main API for the DevCollab platform', primary_language: 'JavaScript', visibility: 'public', tags: ['api', 'node', 'express', 'mongodb'], stars_count: 5, forks_count: 2, readme_content: '# DevCollab API\n\nBackend API for DevCollab.\n\n## Features\n- User auth\n- Project management\n- Code snippets\n' },
+    { owner_id: alex._id, name: 'Private Notes', description: 'Personal notes app (private)', primary_language: 'JavaScript', visibility: 'private', tags: ['notes', 'personal'], stars_count: 0, forks_count: 0, readme_content: '# Private Notes\n\nA private note-taking application.\n' },
+    // Projects for dev1-dev6
+    { owner_id: users[7]._id, name: 'PyML Toolkit', description: 'Machine learning toolkit built with Python and scikit-learn', primary_language: 'Python', visibility: 'public', tags: ['python', 'ml', 'data-science'], stars_count: 14, forks_count: 3, readme_content: '# PyML Toolkit\n\nMachine learning toolkit.\n' },
+    { owner_id: users[8]._id, name: 'GoMicro API', description: 'Microservices API gateway written in Go', primary_language: 'Go', visibility: 'public', tags: ['go', 'microservices', 'api'], stars_count: 22, forks_count: 7, readme_content: '# GoMicro API\n\nMicroservices API gateway.\n' },
+    { owner_id: users[9]._id, name: 'Rusty CLI', description: 'Command-line tools collection built with Rust', primary_language: 'Rust', visibility: 'public', tags: ['rust', 'cli', 'tools'], stars_count: 9, forks_count: 2, readme_content: '# Rusty CLI\n\nCLI tools in Rust.\n' },
+    { owner_id: users[10]._id, name: 'TypeCore', description: 'TypeScript core library with utility types and helpers', primary_language: 'TypeScript', visibility: 'public', tags: ['typescript', 'utilities', 'types'], stars_count: 17, forks_count: 4, readme_content: '# TypeCore\n\nTypeScript utilities.\n' },
+    { owner_id: users[11]._id, name: 'SpringBoard', description: 'Spring Boot starter kit for rapid API development', primary_language: 'Java', visibility: 'public', tags: ['java', 'spring', 'api'], stars_count: 33, forks_count: 11, readme_content: '# SpringBoard\n\nSpring Boot starter kit.\n' },
+    { owner_id: users[12]._id, name: 'CPP Game Engine', description: 'Lightweight 2D game engine written in C++', primary_language: 'C++', visibility: 'public', tags: ['cpp', 'game-dev', 'engine'], stars_count: 7, forks_count: 1, readme_content: '# CPP Game Engine\n\n2D game engine in C++.\n' },
+    // dev1 collaborates on TaskFlow, dev2 collaborates on CloudDeploy
+    { owner_id: users[7]._id, name: 'Dev1 Private App', description: 'Personal project', primary_language: 'JavaScript', visibility: 'private', tags: ['personal'], stars_count: 0, forks_count: 0, readme_content: '# Private App\n' },
   ]);
-  const [taskFlow, dataViz, healthTrack, cloudDeploy, vueStore, devcollabApi, privateNotes] = projects;
+  const [taskFlow, dataViz, healthTrack, cloudDeploy, vueStore, devcollabApi, privateNotes, pyML, goMicro, rustyCLI, typeCore, springBoard, cppEngine, dev1Private] = projects;
   console.log(`Created ${projects.length} projects`);
 
   // --- Project Collaborators ---
   await ProjectCollaborator.insertMany([
     { project_id: taskFlow._id, user_id: alex._id, role: 'owner' },
     { project_id: taskFlow._id, user_id: demo._id, role: 'collaborator' },
+    { project_id: taskFlow._id, user_id: users[7]._id, role: 'collaborator' },
     { project_id: dataViz._id, user_id: sarah._id, role: 'owner' },
     { project_id: dataViz._id, user_id: alex._id, role: 'collaborator' },
     { project_id: dataViz._id, user_id: jordan._id, role: 'collaborator' },
+    { project_id: dataViz._id, user_id: users[10]._id, role: 'collaborator' },
     { project_id: healthTrack._id, user_id: marcus._id, role: 'owner' },
     { project_id: healthTrack._id, user_id: demo._id, role: 'collaborator' },
     { project_id: cloudDeploy._id, user_id: priya._id, role: 'owner' },
     { project_id: cloudDeploy._id, user_id: sarah._id, role: 'collaborator' },
+    { project_id: cloudDeploy._id, user_id: users[8]._id, role: 'collaborator' },
     { project_id: vueStore._id, user_id: jordan._id, role: 'owner' },
     { project_id: vueStore._id, user_id: demo._id, role: 'collaborator' },
     { project_id: devcollabApi._id, user_id: demo._id, role: 'owner' },
     { project_id: devcollabApi._id, user_id: alex._id, role: 'collaborator' },
     { project_id: privateNotes._id, user_id: alex._id, role: 'owner' },
+    { project_id: pyML._id, user_id: users[7]._id, role: 'owner' },
+    { project_id: pyML._id, user_id: users[10]._id, role: 'collaborator' },
+    { project_id: goMicro._id, user_id: users[8]._id, role: 'owner' },
+    { project_id: goMicro._id, user_id: users[11]._id, role: 'collaborator' },
+    { project_id: rustyCLI._id, user_id: users[9]._id, role: 'owner' },
+    { project_id: rustyCLI._id, user_id: users[12]._id, role: 'collaborator' },
+    { project_id: typeCore._id, user_id: users[10]._id, role: 'owner' },
+    { project_id: typeCore._id, user_id: users[7]._id, role: 'collaborator' },
+    { project_id: springBoard._id, user_id: users[11]._id, role: 'owner' },
+    { project_id: springBoard._id, user_id: users[8]._id, role: 'collaborator' },
+    { project_id: cppEngine._id, user_id: users[12]._id, role: 'owner' },
+    { project_id: cppEngine._id, user_id: users[9]._id, role: 'collaborator' },
+    { project_id: dev1Private._id, user_id: users[7]._id, role: 'owner' },
   ]);
   console.log('Created project collaborators');
 
@@ -109,6 +138,14 @@ async function seed() {
     { project_id: devcollabApi._id, title: 'Add rate limiting', description: 'Implement API rate limiting to prevent abuse', created_by: demo._id, assignee_id: alex._id, priority: 'medium', status: 'open', tags: ['security'] },
     { project_id: devcollabApi._id, title: 'Write API documentation', description: 'Document all API endpoints with examples', created_by: demo._id, assignee_id: demo._id, priority: 'low', status: 'open', tags: ['docs'] },
     { project_id: devcollabApi._id, title: 'Implement search functionality', description: 'Add full-text search across projects and snippets', created_by: demo._id, assignee_id: alex._id, priority: 'high', status: 'in_progress', tags: ['backend'] },
+    { project_id: pyML._id, title: 'Add random forest classifier', description: 'Implement random forest algorithm', created_by: users[7]._id, assignee_id: users[7]._id, priority: 'high', status: 'in_progress', tags: ['ml', 'python'] },
+    { project_id: pyML._id, title: 'Write model evaluation utils', description: 'Cross-validation and metrics helpers', created_by: users[7]._id, assignee_id: users[10]._id, priority: 'medium', status: 'open', tags: ['testing'] },
+    { project_id: goMicro._id, title: 'Implement service discovery', description: 'Add Consul-based service discovery', created_by: users[8]._id, assignee_id: users[8]._id, priority: 'high', status: 'open', tags: ['go', 'microservices'] },
+    { project_id: goMicro._id, title: 'Add health check endpoint', description: 'Implement /healthz endpoint', created_by: users[8]._id, assignee_id: users[11]._id, priority: 'low', status: 'completed', tags: ['observability'] },
+    { project_id: rustyCLI._id, title: 'Implement grep-like tool', description: 'Build a fast grep clone in Rust', created_by: users[9]._id, assignee_id: users[9]._id, priority: 'medium', status: 'open', tags: ['rust', 'cli'] },
+    { project_id: typeCore._id, title: 'Add utility types', description: 'Implement Partial, Pick, Omit equivalents', created_by: users[10]._id, assignee_id: users[10]._id, priority: 'high', status: 'in_progress', tags: ['typescript'] },
+    { project_id: springBoard._id, title: 'Add JWT auth filter', description: 'Implement JWT authentication filter', created_by: users[11]._id, assignee_id: users[11]._id, priority: 'high', status: 'open', tags: ['java', 'security'] },
+    { project_id: cppEngine._id, title: 'Add sprite rendering', description: 'Implement sprite sheet rendering', created_by: users[12]._id, assignee_id: users[12]._id, priority: 'medium', status: 'open', tags: ['cpp', 'rendering'] },
   ]);
   console.log('Created tasks');
 
@@ -127,13 +164,13 @@ async function seed() {
 
   // --- Pull Requests ---
   await PullRequest.insertMany([
-    { project_id: taskFlow._id, title: 'Add drag-and-drop board UI', description: 'Implements drag-and-drop functionality for the task board. Uses react-beautiful-dnd library.', source_branch: 'feature/drag-drop', target_branch: 'main', opened_by: demo._id, status: 'open' },
-    { project_id: taskFlow._id, title: 'Implement WebSocket notifications', description: 'Adds real-time notifications using Socket.io', source_branch: 'feature/notifications', target_branch: 'main', opened_by: alex._id, status: 'open' },
-    { project_id: dataViz._id, title: 'Add 3D scatter plot', description: 'Implements 3D scatter plots with interactive rotation', source_branch: 'feature/3d-plots', target_branch: 'main', opened_by: sarah._id, status: 'merged' },
-    { project_id: dataViz._id, title: 'Performance optimization', description: 'Optimizes rendering for datasets with 100k+ points', source_branch: 'opt/rendering', target_branch: 'main', opened_by: alex._id, status: 'open' },
-    { project_id: healthTrack._id, title: 'Step counting algorithm', description: 'Implements step counting using phone accelerometer', source_branch: 'feature/step-counter', target_branch: 'main', opened_by: marcus._id, status: 'open' },
-    { project_id: cloudDeploy._id, title: 'AWS ECS deployment support', description: 'Adds ECS deployment support with Task Definitions', source_branch: 'feature/ecs', target_branch: 'main', opened_by: priya._id, status: 'open' },
-    { project_id: vueStore._id, title: 'Product search feature', description: 'Full-text search with category filters', source_branch: 'feature/search', target_branch: 'main', opened_by: jordan._id, status: 'open' },
+    { project_id: taskFlow._id, title: 'Add drag-and-drop board UI', description: 'Implements drag-and-drop functionality for the task board. Uses react-beautiful-dnd library.', from_branch: 'feature/drag-drop', to_branch: 'main', opened_by: demo._id, status: 'open' },
+    { project_id: taskFlow._id, title: 'Implement WebSocket notifications', description: 'Adds real-time notifications using Socket.io', from_branch: 'feature/notifications', to_branch: 'main', opened_by: alex._id, status: 'open' },
+    { project_id: dataViz._id, title: 'Add 3D scatter plot', description: 'Implements 3D scatter plots with interactive rotation', from_branch: 'feature/3d-plots', to_branch: 'main', opened_by: sarah._id, status: 'merged' },
+    { project_id: dataViz._id, title: 'Performance optimization', description: 'Optimizes rendering for datasets with 100k+ points', from_branch: 'opt/rendering', to_branch: 'main', opened_by: alex._id, status: 'open' },
+    { project_id: healthTrack._id, title: 'Step counting algorithm', description: 'Implements step counting using phone accelerometer', from_branch: 'feature/step-counter', to_branch: 'main', opened_by: marcus._id, status: 'open' },
+    { project_id: cloudDeploy._id, title: 'AWS ECS deployment support', description: 'Adds ECS deployment support with Task Definitions', from_branch: 'feature/ecs', to_branch: 'main', opened_by: priya._id, status: 'open' },
+    { project_id: vueStore._id, title: 'Product search feature', description: 'Full-text search with category filters', from_branch: 'feature/search', to_branch: 'main', opened_by: jordan._id, status: 'open' },
   ]);
   console.log('Created pull requests');
 
@@ -149,12 +186,12 @@ async function seed() {
 
   // --- Discussions ---
   const discussions = await Discussion.insertMany([
-    { project_id: taskFlow._id, author_id: demo._id, title: 'Should we migrate to TypeScript?', content: 'I think migrating to TypeScript would improve code quality and developer experience.', tags: ['typescript', 'discussion'], replies_count: 2 },
-    { project_id: taskFlow._id, author_id: alex._id, title: 'New UI component library proposal', content: 'Let\'s discuss which UI library to use for the new design system.', tags: ['ui', 'design'], replies_count: 1 },
-    { project_id: dataViz._id, author_id: jordan._id, title: 'Dash app integration ideas', content: 'We could integrate with Plotly Dash for web-based dashboards.', tags: ['dash', 'integration'], replies_count: 3 },
-    { project_id: cloudDeploy._id, author_id: sarah._id, title: 'Support for Kubernetes?', content: 'Would it make sense to add Kubernetes deployment support?', tags: ['kubernetes', 'feature-request'], replies_count: 2 },
-    { project_id: vueStore._id, author_id: demo._id, title: 'State management patterns', content: 'Comparing Pinia vs Vuex for our store layer.', tags: ['vue', 'state-management'], replies_count: 1 },
-    { project_id: devcollabApi._id, author_id: alex._id, title: 'API versioning strategy', content: 'Should we use URL prefix or header-based versioning?', tags: ['api', 'versioning'], replies_count: 2 },
+    { project_id: taskFlow._id, author_id: demo._id, title: 'Should we migrate to TypeScript?', body: 'I think migrating to TypeScript would improve code quality and developer experience.', replies_count: 2 },
+    { project_id: taskFlow._id, author_id: alex._id, title: 'New UI component library proposal', body: 'Let\'s discuss which UI library to use for the new design system.', replies_count: 1 },
+    { project_id: dataViz._id, author_id: jordan._id, title: 'Dash app integration ideas', body: 'We could integrate with Plotly Dash for web-based dashboards.', replies_count: 3 },
+    { project_id: cloudDeploy._id, author_id: sarah._id, title: 'Support for Kubernetes?', body: 'Would it make sense to add Kubernetes deployment support?', replies_count: 2 },
+    { project_id: vueStore._id, author_id: demo._id, title: 'State management patterns', body: 'Comparing Pinia vs Vuex for our store layer.', replies_count: 1 },
+    { project_id: devcollabApi._id, author_id: alex._id, title: 'API versioning strategy', body: 'Should we use URL prefix or header-based versioning?', replies_count: 2 },
   ]);
   console.log('Created discussions');
 
@@ -221,6 +258,10 @@ async function seed() {
   console.log('  Admin:     admin@devcollab.com / admin123');
   console.log('  Developer: dev1@devcollab.com  / dev123');
   console.log('  Developer: dev2@devcollab.com  / dev123');
+  console.log('  Developer: dev3@devcollab.com  / dev123');
+  console.log('  Developer: dev4@devcollab.com  / dev123');
+  console.log('  Developer: dev5@devcollab.com  / dev123');
+  console.log('  Developer: dev6@devcollab.com  / dev123');
   console.log('  Developer: demo@example.com    / password123');
 
   await mongoose.disconnect();

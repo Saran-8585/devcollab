@@ -24,11 +24,14 @@ SyntaxHighlighter.registerLanguage('rust', rust);
 SyntaxHighlighter.registerLanguage('sql', sql);
 SyntaxHighlighter.registerLanguage('css', css);
 
+const DEV_USERNAMES = ['dev1', 'dev2', 'dev3', 'dev4', 'dev5', 'dev6'];
+
 export default function Explore() {
   const [projects, setProjects] = useState([]);
   const [snippets, setSnippets] = useState([]);
   const [topDevs, setTopDevs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [devsLoading, setDevsLoading] = useState(true);
   const [langFilter, setLangFilter] = useState('all');
   const [sort, setSort] = useState('stars');
   const { user } = useAuth();
@@ -44,19 +47,23 @@ export default function Explore() {
     Promise.all([
       API.get('/projects', { params: { language: langFilter, sort } }).then(r => r.data.projects),
       API.get('/snippets', { params: { sort: 'likes' } }).then(r => r.data.snippets),
-      API.get('/users/devkiran').then(r => {
-        const allDevs = [
-          { ...r.data.user, projects: r.data.projects },
-        ];
-        return allDevs;
-      }).catch(() => []),
-    ]).then(([proj, snips, devs]) => {
+    ]).then(([proj, snips]) => {
       setProjects(proj);
       setSnippets(snips.slice(0, 4));
-      setTopDevs(devs);
       setLoading(false);
     }).catch(() => setLoading(false));
   }, [langFilter, sort]);
+
+  useEffect(() => {
+    setDevsLoading(true);
+    Promise.allSettled(
+      DEV_USERNAMES.map(u => API.get(`/users/${u}`).then(r => r.data))
+    ).then(results => {
+      const devs = results.filter(r => r.status === 'fulfilled').map(r => r.value);
+      setTopDevs(devs);
+      setDevsLoading(false);
+    }).catch(() => setDevsLoading(false));
+  }, []);
 
   const FeaturedProjects = () => (
     <section>
@@ -148,27 +155,32 @@ export default function Explore() {
     </section>
   );
 
-  const TopDevelopersPlaceholder = () => (
+  const TopDevelopersSection = () => (
     <section className="mt-10">
       <h2 className="text-xl font-bold mb-6">Top Developers</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {[1,2,3,4,5,6].map(i => (
-          <Link key={i} to={`/u/dev${i}`}>
+        {devsLoading ? Array.from({ length: 6 }).map((_, i) => (
+          <Card key={i}><CardContent className="p-4 flex items-center gap-4"><Skeleton className="h-12 w-12 rounded-full" /><div className="space-y-2"><Skeleton className="h-4 w-32" /><Skeleton className="h-3 w-24" /></div></CardContent></Card>
+        )) : topDevs.map(d => (
+          <Link key={d.user.username} to={`/u/${d.user.username}`}>
             <Card className="hover:border-slate-500 transition-colors cursor-pointer">
               <CardContent className="p-4 flex items-center gap-4">
-                <Avatar name={`Dev ${i}`} size="lg" />
+                <Avatar name={d.user.name} size="lg" />
                 <div>
-                  <h3 className="font-semibold">dev{i}@devcollab.com</h3>
-                  <p className="text-xs text-slate-400">@{`dev${i}`}</p>
+                  <h3 className="font-semibold">{d.user.name}</h3>
+                  <p className="text-xs text-slate-400">@{d.user.username}</p>
                   <div className="flex items-center gap-2 mt-1 text-xs text-slate-500">
-                    <Badge variant="secondary">{LANGUAGES[i % LANGUAGES.length]}</Badge>
-                    <span>{Math.floor(Math.random() * 20)} projects</span>
+                    <Badge variant="secondary">{d.user.primary_language}</Badge>
+                    <span>{d.projects?.length || 0} projects</span>
                   </div>
                 </div>
               </CardContent>
             </Card>
           </Link>
         ))}
+        {!devsLoading && topDevs.length === 0 && (
+          <p className="text-sm text-slate-500 col-span-full">No developers found</p>
+        )}
       </div>
     </section>
   );
@@ -181,7 +193,7 @@ export default function Explore() {
       </div>
       <FeaturedProjects />
       <TrendingSnippets />
-      <TopDevelopersPlaceholder />
+      <TopDevelopersSection />
     </div>
   );
 }

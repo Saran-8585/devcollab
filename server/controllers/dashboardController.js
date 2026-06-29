@@ -2,6 +2,7 @@ import User from '../models/User.js';
 import Project from '../models/Project.js';
 import Snippet from '../models/Snippet.js';
 import Task from '../models/Task.js';
+import PullRequest from '../models/PullRequest.js';
 import ProjectCollaborator from '../models/ProjectCollaborator.js';
 import ActivityLog from '../models/ActivityLog.js';
 
@@ -51,6 +52,9 @@ export async function getUserDashboard(req, res, next) {
       .sort({ created_at: -1 })
       .limit(20);
 
+    const mySnippetsCount = await Snippet.countDocuments({ user_id: userId });
+    const myPRsCount = await PullRequest.countDocuments({ opened_by: userId });
+
     const fullName = req.user.name;
     const initial = fullName ? fullName.charAt(0).toUpperCase() : '?';
 
@@ -60,6 +64,10 @@ export async function getUserDashboard(req, res, next) {
       tasks: inProgressTasks.map(t => ({ ...t.toObject(), project_name: t.project_id?.name })),
       activity: recentActivity,
       avatar: initial,
+      openTasks: inProgressTasks.length,
+      myProjects: myProjects.length + collabProjects.length,
+      mySnippets: mySnippetsCount,
+      myPRs: myPRsCount,
     });
   } catch (err) {
     next(err);

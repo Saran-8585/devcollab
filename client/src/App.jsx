@@ -1,6 +1,7 @@
 import { Routes, Route } from 'react-router-dom';
 import Layout from './components/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
+import AdminRoute from './components/AdminRoute';
 import { ToastProvider } from './components/ui/toast';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -33,7 +34,7 @@ export default function App() {
           <Route path="/pr/new" element={<ProtectedRoute><PRNew /></ProtectedRoute>} />
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
           <Route path="/discussions" element={<Discussions />} />
-          <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
+          <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
         </Route>
       </Routes>
     </ToastProvider>

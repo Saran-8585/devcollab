@@ -225,6 +225,13 @@ export default function Profile() {
                         <Badge variant="secondary" className="text-xs">{p.primary_language}</Badge>
                         <span className="text-xs text-slate-500">⭐ {p.stars_count}</span>
                       </div>
+                      {p.tags?.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mb-1">
+                          {p.tags.slice(0, 2).map(tag => (
+                            <Badge key={tag} variant="outline" className="text-[10px] px-1.5 py-0">{tag}</Badge>
+                          ))}
+                        </div>
+                      )}
                       <h4 className="font-medium text-sm truncate">{p.name}</h4>
                       <p className="text-xs text-slate-500 truncate">{p.description}</p>
                     </div>

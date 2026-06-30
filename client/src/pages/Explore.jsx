@@ -101,6 +101,13 @@ export default function Explore() {
                 </div>
                 <h3 className="font-semibold mb-1 truncate">{p.name}</h3>
                 <p className="text-sm text-slate-400 line-clamp-2 mb-3">{p.description}</p>
+                {p.tags?.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mb-3">
+                    {p.tags.slice(0, 3).map(tag => (
+                      <Badge key={tag} variant="outline" className="text-[10px] px-1.5 py-0">{tag}</Badge>
+                    ))}
+                  </div>
+                )}
                 <div className="flex items-center gap-3 text-xs text-slate-500">
                   <Badge variant="secondary">{p.primary_language}</Badge>
                   <span>⭐ {p.stars_count}</span>

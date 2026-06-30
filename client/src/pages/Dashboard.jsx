@@ -202,6 +202,13 @@ export default function Dashboard() {
                         </div>
                         <h3 className="font-semibold mb-1 truncate">{p.name}</h3>
                         <p className="text-xs text-slate-400 line-clamp-2">{p.description}</p>
+                        {p.tags?.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {p.tags.slice(0, 3).map(tag => (
+                              <Badge key={tag} variant="outline" className="text-[10px] px-1.5 py-0">{tag}</Badge>
+                            ))}
+                          </div>
+                        )}
                         <div className="flex items-center gap-3 mt-2 text-xs text-slate-500">
                           <span>⭐ {p.stars_count}</span>
                           <span>Updated {timeAgo(p.updated_at)}</span>

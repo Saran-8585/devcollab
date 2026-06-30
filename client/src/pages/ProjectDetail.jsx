@@ -284,6 +284,13 @@ export default function ProjectDetail() {
             <Avatar name={p.owner_name} size="sm" /> {p.owner_username}
           </Link>
           <Badge variant="secondary" className="text-xs">{p.primary_language}</Badge>
+          {p.tags?.length > 0 && (
+            <div className="flex flex-wrap gap-1">
+              {p.tags.map(tag => (
+                <Badge key={tag} variant="outline" className="text-[10px] px-1.5 py-0">{tag}</Badge>
+              ))}
+            </div>
+          )}
           <span>Updated {timeAgo(p.updated_at)}</span>
         </div>
       </div>
